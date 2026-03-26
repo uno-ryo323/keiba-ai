@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *.pyo
 
+# venv
+.venv/
+
 # 環境変数・認証情報
 .env
 *.env
