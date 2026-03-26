@@ -8,8 +8,8 @@ import locale
 class PurchaseTicket:
     
     userid = '63484396'
-    password = '1173'
-    pars = '1173'
+    password = 'YOUR_IPAT_PASSWORD'
+    pars = 'YOUR_IPAT_PARS'
     
     def __init__(self, race_id, date):
         self.race_id = race_id

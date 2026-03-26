@@ -265,8 +265,8 @@ class Scraping():
     地方競馬と海外競馬の結果取得に利用する
     """
     def get_race_result(race_ids):
-        USER = "darjiling0917@docomo.ne.jp"
-        PASS = "fjrkk117349"
+        USER = "YOUR_NETKEIBA_ID"
+        PASS = "YOUR_NETKEIBA_PASSWORD"
         login_info = {
             "login_id":USER,
             "pswd":PASS,

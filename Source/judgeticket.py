@@ -7,8 +7,8 @@ import pandas as pd
 
 class JudgeTicket():
     
-    USER = "darjiling0917@docomo.ne.jp"
-    PASS = "fjrkk117349"
+    USER = "YOUR_NETKEIBA_ID"
+    PASS = "YOUR_NETKEIBA_PASSWORD"
     login_info = {
         "login_id":USER,
         "pswd":PASS,
