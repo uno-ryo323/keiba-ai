@@ -4,5 +4,11 @@ scikit-learn
 lightgbm
 selenium
 beautifulsoup4
+lxml
 requests
 matplotlib
+webdriver-manager
+
+# 開発ツール
+black
+ruff

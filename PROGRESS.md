@@ -29,7 +29,7 @@
 
 | フェーズ | 内容 | ステータス |
 |---------|------|-----------|
-| Phase 1 | Selenium API 更新（旧式→新式） | 🔄 進行中 |
+| Phase 1 | Selenium API 更新（旧式→新式） | ✅ 完了 |
 | Phase 2 | パス・設定のコンフィグ化 | 🔲 未着手 |
 | Phase 3 | 認証情報の外部化（.env） | 🔲 未着手 |
 | Phase 4 | Kelly基準バグ修正 | 🔲 未着手 |
@@ -118,5 +118,27 @@ GitHubはPassword認証が廃止済みのためSSH鍵が必要。CodeCommitは20
 Python 3.14も選択肢にあったが、LightGBM等MLパッケージの安定性を優先して3.13を選択。
 
 ---
+
+---
+
+### Phase 1 — Selenium API更新・静的解析・フォーマット対応
+
+**日付：** 2026-03-26
+**対応ファイル：** `getinfo.py`, `judgeticket.py`, `purchaseticket.py`
+
+**対応内容：**
+- Selenium旧式API（`find_element_by_*`）→ 新式（`find_element(By.*)`）全16箇所修正
+- `executable_path=` → `Service` オブジェクト使用に変更
+- `purchaseticket.py` の syntax error 3箇所修正（`&&`→`and`、余分な括弧、コロン抜け）
+- 各メソッドにdocstring追加・CHROMEDRIVER_PATH定数化・f-stringで可読性向上
+- `ruff`（リンター）・`black`（フォーマッタ）導入・適用
+
+**追加で判明した問題：**
+- `getinfo.py` の `get_odds()` にChromeDriverパスのタイポ（`ChormeDriver`）があり修正
+- `purchaseticket.py` の各購入メソッドはすべて未実装（Phase 6で対応予定）
+
+**所感：**
+Seleniumの修正自体はシンプルだったが、`purchaseticket.py` にsyntax errorが3箇所あり実質まったく動かない状態だった。
+ruff・blackを導入したことで今後の修正品質が安定する。
 
 <!-- 以降、作業のたびに追記 -->
