@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# 環境変数・認証情報
+.env
+*.env
+
+# 大容量データファイル（GitHubにはあげない）
+Data/
+
+# 学習済みモデル（バイナリ）
+Source/model/
+
+# エンコーダ（pickleバイナリ）
+Source/encode/
+
+# Chromedriver
+Common/
+
+# その他
+.DS_Store
+Thumbs.db
