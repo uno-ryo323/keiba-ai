@@ -1,124 +1,161 @@
-import pandas as pd
 import time
-from selenium import webdriver
 import datetime
 import locale
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+
+# ChromeDriverのパス（Phase 2で設定ファイルに切り出し予定）
+CHROMEDRIVER_PATH = "C:\\KeibaAI\\Common\\chromedriver.exe"
+
+# 場コード→競馬場名のマッピング
+PLACE_MAP = {
+    "01": "札幌",
+    "02": "函館",
+    "03": "福島",
+    "04": "新潟",
+    "05": "東京",
+    "06": "中山",
+    "07": "中京",
+    "08": "京都",
+    "09": "阪神",
+    "10": "小倉",
+}
 
 
 class PurchaseTicket:
-    
-    userid = '63484396'
-    password = 'YOUR_IPAT_PASSWORD'
-    pars = 'YOUR_IPAT_PARS'
-    
+    """iPATへの自動投票を行うクラス（未完成）"""
+
+    userid = "63484396"
+    password = "YOUR_IPAT_PASSWORD"
+    pars = "YOUR_IPAT_PARS"
+
     def __init__(self, race_id, date):
         self.race_id = race_id
-        self.place = PurchaseTicket.change_place(race_id[4:6])
+        self.place = PLACE_MAP.get(race_id[4:6], "")
         self.race_num = race_id[-2]
         self.date = date
         self.money_total = 0
-        self.driver = webdriver.Chrome(executable_path="C:\\ChormeDriver\\chromedriver.exe")
-    
-    def change_place(place_code):
-        place = place_code.replace('01','札幌').replace('02','函館').replace('03','福島').replace('04','新潟').replace('05','東京').replace('06','中山').replace('07','中京').replace('08','京都').replace('09','阪神').replace('10','小倉')
-        return place
-        
-    
+        service = Service(executable_path=CHROMEDRIVER_PATH)
+        self.driver = webdriver.Chrome(service=service)
+
     def auto_purchase(self):
-        ticket_data = pd.read_csv("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + self.date + "\\" + self.race_id + "\\ticket.csv", sep=",", encoding="cp932")
-        for i in range(0,len(ticket_data)):
-            ticket_type = ticket_data.loc[i,'1']
-            money = ticket_data.loc[i,'6']
-            self.money_total = self.money_total + money
-            horse_number1 = ticket_data.loc[i,'2']
-            horse_number2 = ticket_data.loc[i,'3']
-            if ticket_type == 'Win':
-                purchase_win(horse_number1, money)
-            elif ticket_type == 'Show':
-                purchase_show(horse_number1, money)
-            elif ticket_type == 'QuinellaPlace':
-                purchase_quinellaplace(horse_number1, horse_number2, money)
-            elif ticket_type == 'Quiella':
-                purchase_quinella(horse_number1, horse_number2, money)
-            elif ticket_type == 'BracketQuiella':
-                purchase_bracketquinella(horse_number1, horse_number2, money)
-            elif ticket_type == 'Exacta':
-                purchase_exacta(horse_number1, horse_number2, money)
-            elif ticket_type == 'Trio':
-                purchase_trio(horse_number1, horse_number2, horse_number3, money)
+        """ticket.csvを読み込んで券種ごとに投票関数を呼び出す（未完成）"""
+        base_path = (
+            "C:\\keibaAI\\Data\\netKeiba\\racecard\\"
+            + self.date
+            + "\\"
+            + self.race_id
+            + "\\"
+        )
+        ticket_data = pd.read_csv(base_path + "ticket.csv", sep=",", encoding="cp932")
 
-    def purchase_trio(horse_number1, horse_number2, horse_number3, money)        
-    
+        for i in range(len(ticket_data)):
+            ticket_type = ticket_data.loc[i, "1"]
+            money = ticket_data.loc[i, "6"]
+            self.money_total += money
+            horse_number1 = ticket_data.loc[i, "2"]
+            horse_number2 = ticket_data.loc[i, "3"]
 
-            
-    """
-    def purchase_win(horse_number, money):
-        
-    def purchase_show(horse_number, money):
+            # NOTE: 各purchase_*メソッドは未実装
+            if ticket_type == "Win":
+                self.purchase_win(horse_number1, money)
+            elif ticket_type == "Show":
+                self.purchase_show(horse_number1, money)
+            elif ticket_type == "QuinellaPlace":
+                self.purchase_quinellaplace(horse_number1, horse_number2, money)
+            elif ticket_type == "Quinella":
+                self.purchase_quinella(horse_number1, horse_number2, money)
+            elif ticket_type == "BracketQuinella":
+                self.purchase_bracketquinella(horse_number1, horse_number2, money)
+            elif ticket_type == "Exacta":
+                self.purchase_exacta(horse_number1, horse_number2, money)
+            elif ticket_type == "Trio":
+                horse_number3 = ticket_data.loc[i, "4"]
+                self.purchase_trio(horse_number1, horse_number2, horse_number3, money)
 
-    def purchase_quinellaplace(horse_number1, horse_number2, money):
-    
-    def purchase_quinella(horse_number1, horse_number2, money):
+    def purchase_trio(self, horse_number1, horse_number2, horse_number3, money):
+        """3連複を投票する（未実装）"""
+        pass
 
-    def purchase_bracketquinella(horse_number1, horse_number2, money):        
+    # --- 以下、各券種の投票メソッド（未実装） ---
 
-    def purchase_exacta(horse_number1, horse_number2, money):        
-    """
+    def purchase_win(self, horse_number, money):
+        """単勝を投票する（未実装）"""
+        pass
+
+    def purchase_show(self, horse_number, money):
+        """複勝を投票する（未実装）"""
+        pass
+
+    def purchase_quinellaplace(self, horse_number1, horse_number2, money):
+        """ワイドを投票する（未実装）"""
+        pass
+
+    def purchase_quinella(self, horse_number1, horse_number2, money):
+        """馬連を投票する（未実装）"""
+        pass
+
+    def purchase_bracketquinella(self, horse_number1, horse_number2, money):
+        """枠連を投票する（未実装）"""
+        pass
+
+    def purchase_exacta(self, horse_number1, horse_number2, money):
+        """馬単を投票する（未実装）"""
+        pass
 
     def common_process(self):
-                #ドライバーの読み込み
-        #driver = webdriver.Chrome(executable_path="C:\\ChormeDriver\\chromedriver.exe")
-        
-        #---------ipatにログイン------------
-        self.driver.get('https://www.ipat.jra.go.jp/sp/')
-        self.driver.find_element_by_id('userid').send_keys(PurchaseTicket.userid)
-        self.driver.find_element_by_id('password').send_keys(PurchaseTicket.password)
-        self.driver.find_element_by_id('pars').send_keys(PurchaseTicket.pars)
-        self.driver.execute_script('JavaScript:ToSPMenu();return false;')
+        """iPATにログインして競馬場・レース番号を選択する共通処理"""
+        # iPATにログイン
+        self.driver.get("https://www.ipat.jra.go.jp/sp/")
+        self.driver.find_element(By.ID, "userid").send_keys(PurchaseTicket.userid)
+        self.driver.find_element(By.ID, "password").send_keys(PurchaseTicket.password)
+        self.driver.find_element(By.ID, "pars").send_keys(PurchaseTicket.pars)
+        self.driver.execute_script("JavaScript:ToSPMenu();return false;")
         time.sleep(5)
-        
-        #---------投票ボタンの選択------------        
-        link = self.driver.find_element_by_xpath('//*[text()=\'通常投票\']')
+
+        # 通常投票ボタンを選択
+        link = self.driver.find_element(By.XPATH, "//*[text()='通常投票']")
         link.click()
         time.sleep(5)
-        
-        #---------競馬場の選択------------
-        place_list = self.driver.find_elements_by_xpath('/html/body/div/div/ul')
-        place_list = place_list[0].text.split('\n')
-        place_links = self.driver.find_elements_by_xpath('/html/body/div/div/ul/li/a')
-        year = self.date[0:4]
-        month = self.date[4:6]
-        day = self.date[6:8]
-        locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
-        dt = datetime.datetime(int(year),int(month),int(day))
-        dw = dt.strftime('%a'))
+
+        # 競馬場を選択（開催日と場名で一致するリンクをクリック）
+        place_list = self.driver.find_elements(By.XPATH, "/html/body/div/div/ul")
+        place_list = place_list[0].text.split("\n")
+        place_links = self.driver.find_elements(By.XPATH, "/html/body/div/div/ul/li/a")
+
+        year, month, day = self.date[0:4], self.date[4:6], self.date[6:8]
+        locale.setlocale(locale.LC_TIME, "ja_JP.UTF-8")
+        dt = datetime.datetime(int(year), int(month), int(day))
+        dw = dt.strftime("%a")
+
         target_link = None
-        for i in range(0,len(place_list)):
-            if self.place in place_list[i] && dw in place_list[i]:     
+        for i in range(len(place_list)):
+            if self.place in place_list[i] and dw in place_list[i]:
                 target_link = place_links[i]
-                break
-        target_link.click()   
-        time.sleep(2)
-        
-        #---------レース番号の選択------------
-        race_num_list = self.driver.find_element_by_xpath('/html/body/div/div/ul')
-        print(race_num_list.text)
-        race_num_list = race_num_list.text.split('\n')
-        race_num_link = self.driver.find_element_by_xpath('/html/body/div/div/ul/li/a') 
-        target_link = None
-        for i in range(0,len(race_num_list)):
-            if self.race_num in race_num_list[i]:     
-                target_link = race_num_link[i]
                 break
         target_link.click()
         time.sleep(2)
-        
+
+        # レース番号を選択
+        race_num_list = self.driver.find_element(By.XPATH, "/html/body/div/div/ul")
+        race_num_list = race_num_list.text.split("\n")
+        race_num_links = self.driver.find_elements(
+            By.XPATH, "/html/body/div/div/ul/li/a"
+        )
+
+        target_link = None
+        for i in range(len(race_num_list)):
+            if self.race_num in race_num_list[i]:
+                target_link = race_num_links[i]
+                break
+        target_link.click()
+        time.sleep(2)
+
         self.driver.close()
-        
+
+
 if __name__ == "__main__":
-    pt = PurchaseTicket('202105050812','20211127')
-    pt.common_process(1,2,3)
-    
-        
-        
-        
+    pt = PurchaseTicket("202105050812", "20211127")
+    pt.common_process()

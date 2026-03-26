@@ -6,3 +6,7 @@ selenium
 beautifulsoup4
 requests
 matplotlib
+
+# 開発ツール
+black
+ruff
