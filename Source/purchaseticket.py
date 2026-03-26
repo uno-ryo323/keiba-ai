@@ -5,9 +5,7 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-
-# ChromeDriverのパス（Phase 2で設定ファイルに切り出し予定）
-CHROMEDRIVER_PATH = "C:\\KeibaAI\\Common\\chromedriver.exe"
+from webdriver_manager.chrome import ChromeDriverManager
 
 # 場コード→競馬場名のマッピング
 PLACE_MAP = {
@@ -37,7 +35,7 @@ class PurchaseTicket:
         self.race_num = race_id[-2]
         self.date = date
         self.money_total = 0
-        service = Service(executable_path=CHROMEDRIVER_PATH)
+        service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service)
 
     def auto_purchase(self):

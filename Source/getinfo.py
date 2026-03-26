@@ -5,13 +5,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from bs4 import BeautifulSoup
+from webdriver_manager.chrome import ChromeDriverManager
 import re
 import pandas as pd
 import codecs
 import datetime
-
-# ChromeDriverのパス（Phase 2で設定ファイルに切り出し予定）
-CHROMEDRIVER_PATH = "C:\\KeibaAI\\Common\\chromedriver.exe"
 
 
 class GetInfo:
@@ -36,8 +34,8 @@ class GetInfo:
         self.date = date
 
     def _create_driver():
-        """ChromeDriverを生成して返す"""
-        service = Service(executable_path=CHROMEDRIVER_PATH)
+        """ChromeDriverを生成して返す（webdriver-managerで自動バージョン管理）"""
+        service = Service(ChromeDriverManager().install())
         return webdriver.Chrome(service=service, options=GetInfo.options)
 
     def get_race_day(year, month):

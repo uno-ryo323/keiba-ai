@@ -6,9 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-
-# ChromeDriverのパス（Phase 2で設定ファイルに切り出し予定）
-CHROMEDRIVER_PATH = "C:\\KeibaAI\\Common\\chromedriver.exe"
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 class JudgeTicket:
@@ -37,7 +35,7 @@ class JudgeTicket:
     def get_result(self):
         """netKeibaからレース結果（払戻情報）を取得してCSVに保存する"""
         url = "https://race.netkeiba.com/race/result.html?race_id=" + self.race_id
-        service = Service(executable_path=CHROMEDRIVER_PATH)
+        service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=JudgeTicket.options)
         JudgeTicket.login_process(driver)
         driver.get(url)
