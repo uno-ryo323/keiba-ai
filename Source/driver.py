@@ -3,32 +3,30 @@ import preprocess
 import racedb
 import scraping
 import keibaai
-import calcticket
-import judgeticket
 import pandas as pd
 import os
 import warnings
-import time
-import shutil
-import sys
+
+from config import RACECARD_DIR, RACELIST_DIR
 
 section = 0
 
+
 def forecast(date, race_id, type_ai, flag):
-    
+
     getInfo = getinfo.GetInfo(date, race_id)
     pp = preprocess.PreProcess(date, race_id)
-    
-    #レー表の取得
+
+    # レー表の取得
     if flag == 1:
-        getInfo.get_race_card()    
+        getInfo.get_race_card()
         section = 1
-        
-        #前処理
-        
+
+        # 前処理
+
         diff = pp.get_diff_race()
         if not (len(diff) == 0):
-            if not ((len(diff) == 1) and ((diff[0] == '0') or (diff[0] == 0))):
+            if not ((len(diff) == 1) and ((diff[0] == "0") or (diff[0] == 0))):
                 rd = racedb.raceDB
                 rd.get_race_result(diff)
                 sc = scraping.Scraping
@@ -36,14 +34,13 @@ def forecast(date, race_id, type_ai, flag):
                 pp.join_netkeiba_target(diff)
                 pp.calc_agari_rank(diff)
                 pp.join_pre_race_result()
-    
+
     if type_ai == 1:
         pp.encode_use_LabelEncoder()
     else:
         pp.convert_data_old()
-    
-    
-    #予想の実行
+
+    # 予想の実行
     ai = keibaai.KeibaAI(date, race_id)
     ai.forecast_race(type_ai)
 
@@ -58,43 +55,47 @@ def forecast(date, race_id, type_ai, flag):
     calcTicket.main()
     """
     section = 5
-    
+
     """
     #的中判定
     judgeTicket = judgeticket.JudgeTicket(date, race_id)
     judgeTicket.main()
     """
-    
+
+
 if __name__ == "__main__":
     mode = 1
     ai_type = 1
     start = 830
     flag = 0
     MAX_RETRY = 3
-    warnings.simplefilter('ignore')
+    warnings.simplefilter("ignore")
     if mode == 1:
         date = "20220320"
         race_id = "202209011211"
         if flag == 1:
-            os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
-        forecast(date, race_id, ai_type,flag)
+            os.makedirs(RACECARD_DIR / date / race_id)
+        forecast(date, race_id, ai_type, flag)
     elif mode == 2:
         date = "20211226"
-        race_list = pd.read_csv("C:\\keibaAI\\Data\\netKeiba\\racelist\\" + date + ".csv", sep="," , encoding="cp932",\
-                                dtype={'race_id':str})
-        for i in range(0,len(race_list)):
+        race_list = pd.read_csv(
+            RACELIST_DIR / f"{date}.csv",
+            sep=",",
+            encoding="cp932",
+            dtype={"race_id": str},
+        )
+        for i in range(0, len(race_list)):
             if i < 1:
                 continue
             section = 0
-            race_id = race_list.loc[i,'race_id']
-            course = race_list.loc[i,'course']
-            if '障' in course:
+            race_id = race_list.loc[i, "race_id"]
+            course = race_list.loc[i, "course"]
+            if "障" in course:
                 continue
-            os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
-            #print(race_id)
-            forecast(date, race_id,ai_type)
+            os.makedirs(RACECARD_DIR / date / race_id)
+            # print(race_id)
+            forecast(date, race_id, ai_type)
 
-    
     """
     for retry in range(MAX_RETRY + 1):
         try:
@@ -102,7 +103,7 @@ if __name__ == "__main__":
                 dates = ['20211106','20211107','20211113','20211114']
                 #dates = ['20211107','20211113','20211114']
                 for date in dates:
-                    race_list = pd.read_csv("C:\\keibaAI\\Data\\netKeiba\\racelist\\" + date + ".csv", sep="," , encoding="cp932",\
+                    race_list = pd.read_csv(RACELIST_DIR / f"{date}.csv", sep="," , encoding="cp932",
                                             dtype={'race_id':str})
                     for i in range(0,len(race_list)):
                         section = 0
@@ -110,7 +111,7 @@ if __name__ == "__main__":
                         course = race_list.loc[i,'course']
                         #if '障' in course:
                          #   continue
-                        os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
+                        os.makedirs(RACECARD_DIR / date / race_id)
                         print(race_id)
                         forecast(date, race_id,ai_type)
             elif mode == 1:
@@ -119,24 +120,24 @@ if __name__ == "__main__":
                 race_id = "202107060212"
                 
                 if retry == 0:
-                    os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
+                    os.makedirs(RACECARD_DIR / date / race_id)
                 else:
-                    shutil.rmtree("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
-                    os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
+                    shutil.rmtree(RACECARD_DIR / date / race_id)
+                    os.makedirs(RACECARD_DIR / date / race_id)
                 
                 forecast(date, race_id, ai_type)
             else:
-                race_list = pd.read_csv("C:\\keibaAI\\Data\\netKeiba\\common\\race_id_list_2021_2.csv", sep="," , encoding="cp932",\
+                race_list = pd.read_csv(DATA_DIR / "common" / "race_id_list_2021_2.csv", sep="," , encoding="cp932",
                                         dtype={'race_id':str,'date':str})
                 for i in range(start,len(race_list)):
                      race_id = race_list.loc[i,'race_id']
                      date = race_list.loc[i,'date']
                      print(i,race_id)
                      if retry == 0:
-                         os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
+                         os.makedirs(RACECARD_DIR / date / race_id)
                      else:
-                         shutil.rmtree("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
-                         os.makedirs("C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id)
+                         shutil.rmtree(RACECARD_DIR / date / race_id)
+                         os.makedirs(RACECARD_DIR / date / race_id)
                      forecast(date, race_id,ai_type)
         except:
             print('Failed!. section={}'.format(section))
@@ -144,9 +145,3 @@ if __name__ == "__main__":
         else:
             break
     """
-    
-    
-    
-    
-    
-    

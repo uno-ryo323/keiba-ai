@@ -7,6 +7,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
+from config import RACECARD_DIR, URL_IPAT
+
 # 場コード→競馬場名のマッピング
 PLACE_MAP = {
     "01": "札幌",
@@ -40,14 +42,8 @@ class PurchaseTicket:
 
     def auto_purchase(self):
         """ticket.csvを読み込んで券種ごとに投票関数を呼び出す（未完成）"""
-        base_path = (
-            "C:\\keibaAI\\Data\\netKeiba\\racecard\\"
-            + self.date
-            + "\\"
-            + self.race_id
-            + "\\"
-        )
-        ticket_data = pd.read_csv(base_path + "ticket.csv", sep=",", encoding="cp932")
+        base_path = RACECARD_DIR / self.date / self.race_id
+        ticket_data = pd.read_csv(base_path / "ticket.csv", sep=",", encoding="cp932")
 
         for i in range(len(ticket_data)):
             ticket_type = ticket_data.loc[i, "1"]
@@ -106,7 +102,7 @@ class PurchaseTicket:
     def common_process(self):
         """iPATにログインして競馬場・レース番号を選択する共通処理"""
         # iPATにログイン
-        self.driver.get("https://www.ipat.jra.go.jp/sp/")
+        self.driver.get(URL_IPAT)
         self.driver.find_element(By.ID, "userid").send_keys(PurchaseTicket.userid)
         self.driver.find_element(By.ID, "password").send_keys(PurchaseTicket.password)
         self.driver.find_element(By.ID, "pars").send_keys(PurchaseTicket.pars)
