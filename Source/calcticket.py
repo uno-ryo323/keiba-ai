@@ -40,7 +40,7 @@ class CalcTicket:
                 break
             count = count + 1
             sum_odds = sum_odds + (1 / df_data.loc[i, "odds_Win"])
-            if (1 / sum_odds) >= 0:
+            if (1 / sum_odds) <= 1:
                 out_str = (
                     "Win,"
                     + str(df_data.loc[i, "horse_gate"])
@@ -77,7 +77,7 @@ class CalcTicket:
                 break
             count = count + 1
             sum_odds = sum_odds + (1 / df_data.loc[i, "odds_Show_Min"])
-            if (1 / sum_odds) >= 0:
+            if (1 / sum_odds) <= 1:
                 out_str = (
                     "Show,"
                     + str(df_data.loc[i, "horse_gate"])
@@ -120,7 +120,7 @@ class CalcTicket:
                 break
             count = count + 1
             sum_odds = sum_odds + (1 / df_data.loc[i, "QuinellaPlace"])
-            if (1 / sum_odds) >= 0:
+            if (1 / sum_odds) <= 1:
                 out_str = (
                     "QuinellaPlace,"
                     + str(df_data.loc[i, "horse_gate1"])
@@ -187,7 +187,7 @@ class CalcTicket:
                 break
             count = count + 1
             sum_odds = sum_odds + (1 / df_data.loc[i, "BracketQuinella"])
-            if (1 / sum_odds) >= 0:
+            if (1 / sum_odds) <= 1:
                 out_str = (
                     "BracketQuinella,"
                     + str(df_data.loc[i, "lane_gate1"])
@@ -232,7 +232,7 @@ class CalcTicket:
                 break
             count = count + 1
             sum_odds = sum_odds + (1 / df_data.loc[i, "Quinella_odds"])
-            if (1 / sum_odds) >= 0:
+            if (1 / sum_odds) <= 1:
                 out_str = (
                     "Quinella,"
                     + str(df_data.loc[i, "horse_gate1"])
@@ -279,7 +279,7 @@ class CalcTicket:
                 break
             count = count + 1
             sum_odds = sum_odds + (1 / df_data.loc[i, "Exacta"])
-            if (1 / sum_odds) >= 0:
+            if (1 / sum_odds) <= 1:
                 out_str = (
                     "Exacta,"
                     + str(df_data.loc[i, "horse_gate1"])
