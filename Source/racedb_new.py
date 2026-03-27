@@ -5,7 +5,7 @@ import re
 import datetime
 import pandas as pd
 
-from config import RESULT_DIR, URL_DB, URL_LOGIN
+from config import NETKEIBA_PASSWORD, NETKEIBA_USER, RESULT_DIR, URL_DB, URL_LOGIN
 
 """
 レース結果を管理するクラス
@@ -16,8 +16,8 @@ from config import RESULT_DIR, URL_DB, URL_LOGIN
 
 class raceDB:
 
-    USER = "YOUR_NETKEIBA_ID"
-    PASS = "YOUR_NETKEIBA_PASSWORD"
+    USER = NETKEIBA_USER
+    PASS = NETKEIBA_PASSWORD
 
     login_info = {
         "login_id": USER,

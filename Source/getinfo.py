@@ -13,6 +13,8 @@ import datetime
 
 from config import (
     BATCH_DIR,
+    NETKEIBA_PASSWORD,
+    NETKEIBA_USER,
     ODDS_FILES,
     RACECARD_DIR,
     RACELIST_DIR,
@@ -27,8 +29,8 @@ from config import (
 class GetInfo:
     """netKeibaからレース情報・出馬表・オッズを取得するクラス"""
 
-    USER = "YOUR_NETKEIBA_ID"
-    PASS = "YOUR_NETKEIBA_PASSWORD"
+    USER = NETKEIBA_USER
+    PASS = NETKEIBA_PASSWORD
     login_info = {
         "login_id": USER,
         "pswd": PASS,

@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-from config import RACE_ALL_CSV, URL_DB, URL_LOGIN
+from config import NETKEIBA_PASSWORD, NETKEIBA_USER, RACE_ALL_CSV, URL_DB, URL_LOGIN
 
 
 class Scraping:
@@ -420,8 +420,8 @@ class Scraping:
     """
 
     def get_race_result(race_ids):
-        USER = "YOUR_NETKEIBA_ID"
-        PASS = "YOUR_NETKEIBA_PASSWORD"
+        USER = NETKEIBA_USER
+        PASS = NETKEIBA_PASSWORD
         login_info = {
             "login_id": USER,
             "pswd": PASS,

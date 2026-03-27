@@ -8,14 +8,14 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from webdriver_manager.chrome import ChromeDriverManager
 
-from config import RACECARD_DIR, URL_LOGIN
+from config import NETKEIBA_PASSWORD, NETKEIBA_USER, RACECARD_DIR, URL_LOGIN
 
 
 class JudgeTicket:
     """レース結果の取得・的中判定・収支計算を行うクラス"""
 
-    USER = "YOUR_NETKEIBA_ID"
-    PASS = "YOUR_NETKEIBA_PASSWORD"
+    USER = NETKEIBA_USER
+    PASS = NETKEIBA_PASSWORD
     login_info = {
         "login_id": USER,
         "pswd": PASS,
