@@ -1,0 +1,65 @@
+"""
+config.py — KeibaAI 全体設定・パス定義
+
+すべてのファイルパス・URL・定数をここで一元管理する。
+パスの変更が必要な場合はこのファイルのみを編集すること。
+"""
+
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# ベースディレクトリ
+# ---------------------------------------------------------------------------
+BASE_DIR = Path("C:/KeibaAI")
+DATA_DIR = BASE_DIR / "Data" / "netKeiba"
+SOURCE_DIR = BASE_DIR / "Source"
+
+# ---------------------------------------------------------------------------
+# データパス
+# ---------------------------------------------------------------------------
+RACECARD_DIR = DATA_DIR / "racecard"
+RACELIST_DIR = DATA_DIR / "racelist"
+RESULT_DIR = DATA_DIR / "result"
+TARGET_DIR = BASE_DIR / "Data" / "target"
+
+# result サブディレクトリ
+RESULT_PROCESS_DIR = RESULT_DIR / "process"
+
+# 固定CSVファイル
+RACE_ALL_CSV = RESULT_DIR / "race_all.csv"
+ENCODE_LIST_CSV = DATA_DIR / "common" / "encode_list.csv"
+
+# ---------------------------------------------------------------------------
+# モデル・エンコーダ・バッチパス
+# ---------------------------------------------------------------------------
+MODEL_DIR = SOURCE_DIR / "model"
+ENCODE_DIR = SOURCE_DIR / "encode"
+BATCH_DIR = SOURCE_DIR / "Batch"
+
+# ---------------------------------------------------------------------------
+# モデルバージョン（学習済みモデルのサフィックス）
+# ---------------------------------------------------------------------------
+MODEL_VERSION = "v3"
+
+# ---------------------------------------------------------------------------
+# URL
+# ---------------------------------------------------------------------------
+URL_LOGIN = "https://regist.netkeiba.com/account/?pid=login&action=auth"
+URL_CALENDAR = "https://race.netkeiba.com/top/calendar.html"
+URL_RACELIST_PAGE = "https://race.netkeiba.com/top/race_list.html"
+URL_SHUTUBA = "https://race.netkeiba.com/race/shutuba.html"
+URL_ODDS = "https://race.netkeiba.com/odds/index.html"
+URL_DB = "https://db.netkeiba.com"
+URL_IPAT = "https://www.ipat.jra.go.jp/sp/"
+
+# ---------------------------------------------------------------------------
+# オッズCSVファイル名（getinfo.py / calcticket.py 共通）
+# ---------------------------------------------------------------------------
+ODDS_FILES = {
+    "tanfuku": "tanfuku.csv",
+    "wakuren": "wakuren.csv",
+    "umaren": "umaren.csv",
+    "wide": "wide.csv",
+    "umatan": "umatan.csv",
+    "fuku3": "fuku3.csv",
+}

@@ -8,6 +8,8 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from webdriver_manager.chrome import ChromeDriverManager
 
+from config import RACECARD_DIR, URL_LOGIN
+
 
 class JudgeTicket:
     """レース結果の取得・的中判定・収支計算を行うクラス"""
@@ -18,7 +20,7 @@ class JudgeTicket:
         "login_id": USER,
         "pswd": PASS,
     }
-    url_login = "https://regist.netkeiba.com/account/?pid=login&action=auth"
+    url_login = URL_LOGIN
     options = Options()
 
     def __init__(self, date, race_id):
@@ -27,7 +29,7 @@ class JudgeTicket:
 
     def login_process(driver):
         """netKeibaにログインする"""
-        driver.get("https://regist.netkeiba.com/account/?pid=login")
+        driver.get(URL_LOGIN)
         driver.find_element(By.NAME, "login_id").send_keys(JudgeTicket.USER)
         driver.find_element(By.NAME, "pswd").send_keys(JudgeTicket.PASS)
         driver.find_element(By.XPATH, '//input[@alt="ログイン"]').click()
@@ -105,16 +107,10 @@ class JudgeTicket:
 
     def judge_ticket(self):
         """購入チケットと結果を照合して的中フラグを付与する"""
-        base_path = (
-            "C:\\keibaAI\\Data\\netKeiba\\racecard\\"
-            + self.date
-            + "\\"
-            + self.race_id
-            + "\\"
-        )
-        ticket_data = pd.read_csv(base_path + "ticket.csv", sep=",", encoding="cp932")
+        base_path = RACECARD_DIR / self.date / self.race_id
+        ticket_data = pd.read_csv(base_path / "ticket.csv", sep=",", encoding="cp932")
         result_data = pd.read_csv(
-            base_path + "result.csv", sep=",", encoding="cp932", names=[1, 2, 3, 4, 5]
+            base_path / "result.csv", sep=",", encoding="cp932", names=[1, 2, 3, 4, 5]
         )
 
         for i in range(len(result_data)):
@@ -163,18 +159,12 @@ class JudgeTicket:
                 ticket_data.loc[index[0], "8"] = result_data.loc[i, payout_col]
                 ticket_data.loc[index[0], "9"] = "的中"
 
-        ticket_data.to_csv(base_path + "ticket.csv", sep=",", encoding="cp932")
+        ticket_data.to_csv(base_path / "ticket.csv", sep=",", encoding="cp932")
 
     def calc_balance(self):
         """レースの収支（投資額・払戻額・損益）を計算してCSVに保存する"""
-        base_path = (
-            "C:\\keibaAI\\Data\\netKeiba\\racecard\\"
-            + self.date
-            + "\\"
-            + self.race_id
-            + "\\"
-        )
-        ticket_data = pd.read_csv(base_path + "ticket.csv", sep=",", encoding="cp932")
+        base_path = RACECARD_DIR / self.date / self.race_id
+        ticket_data = pd.read_csv(base_path / "ticket.csv", sep=",", encoding="cp932")
 
         total_bet = ticket_data["7"].sum()
         ticket_data["payout"] = ticket_data["7"] * ticket_data["8"]
@@ -202,9 +192,8 @@ class JudgeTicket:
             out_str += f",{bet},{hit_payout}"
 
         print(out_str)
-        racecard_path = "C:\\keibaAI\\Data\\netKeiba\\racecard\\"
-        open(racecard_path + self.date + "\\balance.csv", "a").write(out_str + "\n")
-        open(racecard_path + "balance.csv", "a").write(out_str + "\n")
+        open(RACECARD_DIR / self.date / "balance.csv", "a").write(out_str + "\n")
+        open(RACECARD_DIR / "balance.csv", "a").write(out_str + "\n")
 
     def main(self):
         self.judge_ticket()

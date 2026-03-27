@@ -11,6 +11,18 @@ import pandas as pd
 import codecs
 import datetime
 
+from config import (
+    BATCH_DIR,
+    ODDS_FILES,
+    RACECARD_DIR,
+    RACELIST_DIR,
+    URL_CALENDAR,
+    URL_LOGIN,
+    URL_ODDS,
+    URL_RACELIST_PAGE,
+    URL_SHUTUBA,
+)
+
 
 class GetInfo:
     """netKeibaからレース情報・出馬表・オッズを取得するクラス"""
@@ -21,15 +33,12 @@ class GetInfo:
         "login_id": USER,
         "pswd": PASS,
     }
-    url_login = "https://regist.netkeiba.com/account/?pid=login&action=auth"
+    url_login = URL_LOGIN
     options = Options()
     # options.add_argument('--headless')  # ヘッドレスモードを使う場合はコメントアウトを外す
 
     def __init__(self, date, race_id):
-        # データ保存先パス（Phase 2で設定ファイルに切り出し予定）
-        self.path = (
-            "C:\\keibaAI\\Data\\netKeiba\\racecard\\" + date + "\\" + race_id + "\\"
-        )
+        self.path = str(RACECARD_DIR / date / race_id) + "/"
         self.race_id = race_id
         self.date = date
 
@@ -41,22 +50,16 @@ class GetInfo:
     def get_race_day(year, month):
         """指定年月の開催日一覧を取得してCSVに保存する"""
         driver = GetInfo._create_driver()
-        driver.get(
-            "https://race.netkeiba.com/top/calendar.html?year="
-            + year
-            + "&month="
-            + month
-        )
+        driver.get(f"{URL_CALENDAR}?year={year}&month={month}")
         html = driver.page_source
         soup = BeautifulSoup(html, "lxml")
         RaceCellBox = soup.find_all("td", class_="RaceCellBox")
 
         filePath = (
-            "C:\\KeibaAI\\Source\\Batch\\schedule_"
-            + str(datetime.date(int(year), int(month), 1).strftime("%Y%m"))
-            + ".csv"
+            BATCH_DIR
+            / f"schedule_{datetime.date(int(year), int(month), 1).strftime('%Y%m')}.csv"
         )
-        out = codecs.open(filePath, "w", encoding="shift_jis")
+        out = codecs.open(str(filePath), "w", encoding="shift_jis")
         out.write("kaisai_date,get_list_date,get_result_date,get_predata_date\n")
 
         for i in range(0, len(RaceCellBox)):
@@ -102,9 +105,7 @@ class GetInfo:
         lists = []
 
         driver = GetInfo._create_driver()
-        driver.get(
-            "https://race.netkeiba.com/top/race_list.html?kaisai_date=" + kaisai_date
-        )
+        driver.get(f"{URL_RACELIST_PAGE}?kaisai_date={kaisai_date}")
         GetInfo.login_process(driver)
         time.sleep(2)
 
@@ -173,7 +174,7 @@ class GetInfo:
             print("レース一覧の取得に成功しました")
             df = pd.DataFrame(lists)
             df.to_csv(
-                "C:\\keibaAI\\Data\\netKeiba\\racelist\\" + kaisai_date + ".csv",
+                str(RACELIST_DIR / f"{kaisai_date}.csv"),
                 index=False,
                 sep=",",
                 encoding="Shift-jis",
@@ -189,11 +190,7 @@ class GetInfo:
             GetInfo.login_process(driver)
             time.sleep(1)
 
-            url = (
-                "https://race.netkeiba.com/race/shutuba.html?race_id="
-                + str(self.race_id)
-                + "&rf=race_list"
-            )
+            url = f"{URL_SHUTUBA}?race_id={self.race_id}&rf=race_list"
             driver.get(url)
             html = driver.page_source
             soup = BeautifulSoup(html, "lxml")
@@ -232,7 +229,7 @@ class GetInfo:
 
     def login_process(driver):
         """netKeibaにログインする"""
-        driver.get("https://regist.netkeiba.com/account/?pid=login")
+        driver.get(URL_LOGIN)
         driver.find_element(By.NAME, "login_id").send_keys(GetInfo.USER)
         driver.find_element(By.NAME, "pswd").send_keys(GetInfo.PASS)
         driver.find_element(By.XPATH, '//input[@alt="ログイン"]').click()
@@ -583,26 +580,18 @@ class GetInfo:
             print("オッズを取得します")
             driver = GetInfo._create_driver()
             race_id = str(self.race_id)
-            base_path = (
-                "C:\\keibaAI\\Data\\netKeiba\\racecard\\"
-                + self.date
-                + "\\"
-                + race_id
-                + "\\"
-            )
+            base_path = RACECARD_DIR / self.date / race_id
 
-            file_tanfuku = open(base_path + "tanfuku.csv", "w")
-            file_wakuren = open(base_path + "wakuren.csv", "w")
-            file_umaren = open(base_path + "umaren.csv", "w")
-            file_wide = open(base_path + "wide.csv", "w")
-            file_umatan = open(base_path + "umatan.csv", "w")
-            file_trio = open(base_path + "fuku3.csv", "w")
+            file_tanfuku = open(base_path / ODDS_FILES["tanfuku"], "w")
+            file_wakuren = open(base_path / ODDS_FILES["wakuren"], "w")
+            file_umaren = open(base_path / ODDS_FILES["umaren"], "w")
+            file_wide = open(base_path / ODDS_FILES["wide"], "w")
+            file_umatan = open(base_path / ODDS_FILES["umatan"], "w")
+            file_trio = open(base_path / ODDS_FILES["fuku3"], "w")
 
             # 単複オッズ
             print("単複オッズの取得")
-            driver.get(
-                "https://race.netkeiba.com/odds/index.html?type=b1&race_id=" + race_id
-            )
+            driver.get(f"{URL_ODDS}?type=b1&race_id={race_id}")
             time.sleep(2.0)
             html = driver.page_source
             soup = BeautifulSoup(html, "lxml")
@@ -629,9 +618,7 @@ class GetInfo:
 
             # 枠連オッズ
             print("枠連オッズの取得")
-            driver.get(
-                "https://race.netkeiba.com/odds/index.html?type=b3&race_id=" + race_id
-            )
+            driver.get(f"{URL_ODDS}?type=b3&race_id={race_id}")
             time.sleep(1.0)
             soup = BeautifulSoup(driver.page_source, "lxml")
             file_wakuren.write("lane_gate1,lane_gate2,BracketQuinella\n")
@@ -657,9 +644,7 @@ class GetInfo:
 
             # 馬連オッズ
             print("馬連オッズの取得")
-            driver.get(
-                "https://race.netkeiba.com/odds/index.html?type=b4&race_id=" + race_id
-            )
+            driver.get(f"{URL_ODDS}?type=b4&race_id={race_id}")
             time.sleep(1.0)
             soup = BeautifulSoup(driver.page_source, "lxml")
             file_umaren.write("horse_gate1,horse_gate2,Quinella_odds\n")
@@ -685,9 +670,7 @@ class GetInfo:
 
             # ワイドオッズ
             print("ワイドオッズの取得")
-            driver.get(
-                "https://race.netkeiba.com/odds/index.html?type=b5&race_id=" + race_id
-            )
+            driver.get(f"{URL_ODDS}?type=b5&race_id={race_id}")
             time.sleep(1.0)
             soup = BeautifulSoup(driver.page_source, "lxml")
             file_wide.write("horse_gate1,horse_gate2,QuinellaPlace\n")
@@ -713,9 +696,7 @@ class GetInfo:
 
             # 馬単オッズ
             print("馬単オッズの取得")
-            driver.get(
-                "https://race.netkeiba.com/odds/index.html?type=b6&race_id=" + race_id
-            )
+            driver.get(f"{URL_ODDS}?type=b6&race_id={race_id}")
             time.sleep(1.0)
             soup = BeautifulSoup(driver.page_source, "lxml")
             file_umatan.write("horse_gate1,horse_gate2,Exacta\n")
@@ -741,9 +722,7 @@ class GetInfo:
 
             # 3連複オッズ（馬番選択で組み合わせを取得）
             print("3連複オッズの取得")
-            driver.get(
-                "https://race.netkeiba.com/odds/index.html?type=b7&race_id=" + race_id
-            )
+            driver.get(f"{URL_ODDS}?type=b7&race_id={race_id}")
             time.sleep(1.0)
             soup = BeautifulSoup(driver.page_source, "lxml")
             odds_table = soup.find_all("table", class_="Odds_Table")
