@@ -22,6 +22,9 @@ Source/encode/
 # Chromedriver
 Common/
 
+# 旧版ファイル退避フォルダ（ローカル参照用・Git管理外）
+Source/old/
+
 # その他
 .DS_Store
 Thumbs.db
