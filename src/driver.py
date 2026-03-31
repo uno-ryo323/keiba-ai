@@ -1,13 +1,13 @@
-import getinfo
-import preprocess
-import racedb
-import scraping
-import keibaai
+from .scraping import getinfo
+from .pipeline import preprocess
+from .scraping import racedb
+from .scraping import scraping
+from .pipeline import keibaai
 import pandas as pd
 import os
 import warnings
 
-from config import RACECARD_DIR, RACELIST_DIR
+from .config import RACECARD_DIR, RACELIST_DIR
 
 section = 0
 

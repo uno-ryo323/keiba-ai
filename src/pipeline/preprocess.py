@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from sklearn import preprocessing
 
-from config import (
+from ..config import (
     ENCODE_DIR,
     ENCODE_LIST_CSV,
     RACE_ALL_CSV,

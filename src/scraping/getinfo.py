@@ -11,7 +11,7 @@ import pandas as pd
 import codecs
 import datetime
 
-from config import (
+from ..config import (
     BATCH_DIR,
     NETKEIBA_PASSWORD,
     NETKEIBA_USER,

@@ -2,7 +2,7 @@ import pickle
 from sklearn import preprocessing
 import pandas as pd
 
-from config import ENCODE_DIR, RESULT_DIR, TARGET_DIR
+from ..config import ENCODE_DIR, RESULT_DIR, TARGET_DIR
 
 
 class encode:
