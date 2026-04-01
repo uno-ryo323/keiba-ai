@@ -18,7 +18,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 # ベースディレクトリ
 # ---------------------------------------------------------------------------
 BASE_DIR = Path("C:/KeibaAI")
-DATA_DIR = BASE_DIR / "Data" / "netKeiba"
+DATA_DIR = BASE_DIR / "data" / "netkeiba"
 SOURCE_DIR = BASE_DIR / "src"
 
 # ---------------------------------------------------------------------------
@@ -27,14 +27,14 @@ SOURCE_DIR = BASE_DIR / "src"
 RACECARD_DIR = DATA_DIR / "racecard"
 RACELIST_DIR = DATA_DIR / "racelist"
 RESULT_DIR = DATA_DIR / "result"
-TARGET_DIR = BASE_DIR / "Data" / "target"
+TARGET_DIR = BASE_DIR / "data" / "target"
 
 # result サブディレクトリ
 RESULT_PROCESS_DIR = RESULT_DIR / "process"
 
 # 固定CSVファイル
 RACE_ALL_CSV = RESULT_DIR / "race_all.csv"
-ENCODE_LIST_CSV = DATA_DIR / "common" / "encode_list.csv"
+ENCODE_LIST_CSV = DATA_DIR / "assets" / "encode_list.csv"
 
 # ---------------------------------------------------------------------------
 # モデル・エンコーダ・バッチパス
