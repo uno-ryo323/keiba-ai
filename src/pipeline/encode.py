@@ -63,8 +63,7 @@ class encode:
         for column in columns:
             print(column)
             le = pickle.load(open(ENCODE_DIR / "Ver1.1" / f"{column}.pickle", "rb"))
-            keiba_data[column].fillna("NoneData", inplace=True)
-            keiba_data[column] = keiba_data[column].astype(object)
+            keiba_data[column] = keiba_data[column].fillna("NoneData").astype(str)
             keiba_data[column] = le.transform(keiba_data[column])
         keiba_data.to_csv(RESULT_DIR / "race_jra2.2.csv", sep=",", encoding="cp932")
 
