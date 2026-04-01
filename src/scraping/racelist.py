@@ -188,7 +188,8 @@ if __name__ == "__main__":
     if len(sys.argv) == 5:
         _, sy, sm, ey, em = sys.argv
     else:
-        # デフォルト: 不足分（2022-03 〜 2026-04）
-        sy, sm, ey, em = "2022", "03", "2026", "04"
+        # デフォルト: 不足分（2022-02 〜 2026-04）
+        # ※ race_all.csv の 2022-02 以降はデータが不完全なため 2022-02 から再取得
+        sy, sm, ey, em = "2022", "02", "2026", "04"
 
     get_race_list_range(sy, sm, ey, em)
