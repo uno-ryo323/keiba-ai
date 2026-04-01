@@ -35,6 +35,7 @@ RESULT_PROCESS_DIR = RESULT_DIR / "process"
 # 固定CSVファイル
 RACE_ALL_CSV = RESULT_DIR / "race_all.csv"
 ENCODE_LIST_CSV = DATA_DIR / "assets" / "encode_list.csv"
+ASSETS_DIR = DATA_DIR / "assets"
 
 # ---------------------------------------------------------------------------
 # モデル・エンコーダ・バッチパス
