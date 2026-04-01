@@ -14,16 +14,16 @@ __pycache__/
 Data/
 
 # 学習済みモデル（バイナリ）
-Source/model/
+src/model/
 
 # エンコーダ（pickleバイナリ）
-Source/encode/
+src/encode/
 
 # Chromedriver
 Common/
 
 # 旧版ファイル退避フォルダ（ローカル参照用・Git管理外）
-Source/old/
+src/old/
 
 # その他
 .DS_Store

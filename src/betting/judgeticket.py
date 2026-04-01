@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from webdriver_manager.chrome import ChromeDriverManager
 
-from config import NETKEIBA_PASSWORD, NETKEIBA_USER, RACECARD_DIR, URL_LOGIN
+from ..config import NETKEIBA_PASSWORD, NETKEIBA_USER, RACECARD_DIR, URL_LOGIN
 
 
 class JudgeTicket:

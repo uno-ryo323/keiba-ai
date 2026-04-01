@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from sklearn import preprocessing
 
-from config import (
+from ..config import (
     ENCODE_DIR,
     ENCODE_LIST_CSV,
     RACE_ALL_CSV,
@@ -254,6 +254,22 @@ class PreProcess:
                 "pre_race5": str,
             },
         )
+        # pandas 3.x 互換: race_all.csv の混在型列を数値型に統一
+        # （CSV 内に文字列 '23' と数値 23.0 が混在するため float に正規化）
+        _numeric_cols = [
+            "agari_rank",
+            "track_code",
+            "track_code2",
+            "race_prize",
+            "rpci",
+            "weight_type_code",
+            "rank_offical",
+            "rank_arrival",
+            "ave_3f",
+        ]
+        for _col in _numeric_cols:
+            if _col in all_data.columns:
+                all_data[_col] = pd.to_numeric(all_data[_col], errors="coerce")
         keiba_data = pd.read_csv(
             RACECARD_DIR / self.date / self.race_id / f"{self.race_id}.csv",
             sep=",",
@@ -268,6 +284,63 @@ class PreProcess:
                 "pre_race5": str,
             },
         )
+
+        # pandas 3.x 互換: _p* 列を object 型で事前初期化
+        # loc による動的列生成時に NaN→float64 が先行すると、後続の文字列代入で TypeError になるため
+        _p_cols = [
+            "place",
+            "year",
+            "month",
+            "day",
+            "race_name",
+            "class",
+            "course",
+            "turn",
+            "distance",
+            "weather",
+            "state",
+            "headcount",
+            "rank",
+            "lane_gate",
+            "horse_gate",
+            "handiy",
+            "popular_rank",
+            "odds",
+            "agari",
+            "agari_rank",
+            "time_index",
+            "jockey",
+            "horse_type",
+            "corner_position1",
+            "corner_position2",
+            "corner_position3",
+            "corner_position4",
+            "class_code",
+            "grade_code",
+            "track_code",
+            "track_code2",
+            "corner_count",
+            "course_class",
+            "race_prize",
+            "rpci",
+            "pci3",
+            "race_type_code",
+            "race_symbol_code",
+            "weight_type_code",
+            "blinkers",
+            "rank_offical",
+            "rank_arrival",
+            "abnormal_code",
+            "time_diff",
+            "ave_3f",
+            "pci",
+            "minus_3f",
+        ]
+        for _col in _p_cols:
+            for _sfx in ["_p1", "_p2", "_p3", "_p4", "_p5"]:
+                keiba_data[_col + _sfx] = (
+                    None  # object 型で初期化（NaN は None として格納）
+                )
 
         length = len(keiba_data)
         for i in range(0, length):
@@ -611,91 +684,97 @@ class PreProcess:
 
         keiba_data = keiba_data.replace({"None": "NoneData"})
         le = preprocessing.LabelEncoder()
-        keiba_data["class"].fillna("NoneData", inplace=True)
+        keiba_data["class"] = keiba_data["class"].fillna("NoneData")
         le.fit_transform(keiba_data["class"])
         pickle.dump(le, open(ENCODE_DIR / "class.pickle", "wb"))
-        keiba_data["course"].fillna("NoneData", inplace=True)
+        keiba_data["course"] = keiba_data["course"].fillna("NoneData")
         le.fit_transform(keiba_data["course"])
         pickle.dump(le, open(ENCODE_DIR / "course.pickle", "wb"))
-        keiba_data["turn"].fillna("NoneData", inplace=True)
+        keiba_data["turn"] = keiba_data["turn"].fillna("NoneData")
         le.fit_transform(keiba_data["turn"])
         pickle.dump(le, open(ENCODE_DIR / "turn.pickle", "wb"))
-        keiba_data["weather"].fillna("NoneData", inplace=True)
+        keiba_data["weather"] = keiba_data["weather"].fillna("NoneData")
         le.fit_transform(keiba_data["weather"])
         pickle.dump(le, open(ENCODE_DIR / "weather.pickle", "wb"))
-        keiba_data["state"].fillna("NoneData", inplace=True)
+        keiba_data["state"] = keiba_data["state"].fillna("NoneData")
         le.fit_transform(keiba_data["state"])
         pickle.dump(le, open(ENCODE_DIR / "state.pickle", "wb"))
-        keiba_data["sex"].fillna("NoneData", inplace=True)
+        keiba_data["sex"] = keiba_data["sex"].fillna("NoneData")
         le.fit_transform(keiba_data["sex"])
         pickle.dump(le, open(ENCODE_DIR / "sex.pickle", "wb"))
-        keiba_data["kanri"].fillna("NoneData", inplace=True)
+        keiba_data["kanri"] = keiba_data["kanri"].fillna("NoneData")
         le.fit_transform(keiba_data["kanri"])
         pickle.dump(le, open(ENCODE_DIR / "kanri.pickle", "wb"))
-        keiba_data["jockey"].fillna("NoneData", inplace=True)
+        keiba_data["jockey"] = keiba_data["jockey"].fillna("NoneData")
         le.fit_transform(keiba_data["jockey"])
         pickle.dump(le, open(ENCODE_DIR / "jockey.pickle", "wb"))
-        keiba_data["trainer"].fillna("NoneData", inplace=True)
+        keiba_data["trainer"] = keiba_data["trainer"].fillna("NoneData")
         le.fit_transform(keiba_data["trainer"])
         pickle.dump(le, open(ENCODE_DIR / "trainer.pickle", "wb"))
-        keiba_data["banusi"].fillna("NoneData", inplace=True)
+        keiba_data["banusi"] = keiba_data["banusi"].fillna("NoneData")
         le.fit_transform(keiba_data["banusi"])
         pickle.dump(le, open(ENCODE_DIR / "banusi.pickle", "wb"))
-        keiba_data["breeder"].fillna("NoneData", inplace=True)
+        keiba_data["breeder"] = keiba_data["breeder"].fillna("NoneData")
         le.fit_transform(keiba_data["breeder"])
         pickle.dump(le, open(ENCODE_DIR / "breeder.pickle", "wb"))
-        keiba_data["father"].fillna("NoneData", inplace=True)
+        keiba_data["father"] = keiba_data["father"].fillna("NoneData")
         le.fit_transform(keiba_data["father"])
         pickle.dump(le, open(ENCODE_DIR / "father.pickle", "wb"))
-        keiba_data["father_father"].fillna("NoneData", inplace=True)
+        keiba_data["father_father"] = keiba_data["father_father"].fillna("NoneData")
         le.fit_transform(keiba_data["father_father"])
         pickle.dump(le, open(ENCODE_DIR / "father_father.pickle", "wb"))
-        keiba_data["father_mother"].fillna("NoneData", inplace=True)
+        keiba_data["father_mother"] = keiba_data["father_mother"].fillna("NoneData")
         le.fit_transform(keiba_data["father_mother"])
         pickle.dump(le, open(ENCODE_DIR / "father_mother.pickle", "wb"))
-        keiba_data["mother"].fillna("NoneData", inplace=True)
+        keiba_data["mother"] = keiba_data["mother"].fillna("NoneData")
         le.fit_transform(keiba_data["mother"])
         pickle.dump(le, open(ENCODE_DIR / "mother.pickle", "wb"))
-        keiba_data["mother_father"].fillna("NoneData", inplace=True)
+        keiba_data["mother_father"] = keiba_data["mother_father"].fillna("NoneData")
         le.fit_transform(keiba_data["mother_father"])
         pickle.dump(le, open(ENCODE_DIR / "mother_father.pickle", "wb"))
-        keiba_data["mother_mother"].fillna("NoneData", inplace=True)
+        keiba_data["mother_mother"] = keiba_data["mother_mother"].fillna("NoneData")
         le.fit_transform(keiba_data["mother_mother"])
         pickle.dump(le, open(ENCODE_DIR / "mother_mother.pickle", "wb"))
-        keiba_data["class_code"].fillna("NoneData", inplace=True)
+        keiba_data["class_code"] = keiba_data["class_code"].fillna("NoneData")
         le.fit_transform(keiba_data["class_code"])
         pickle.dump(le, open(ENCODE_DIR / "class_code.pickle", "wb"))
-        keiba_data["grade_code"].fillna("NoneData", inplace=True)
+        keiba_data["grade_code"] = keiba_data["grade_code"].fillna("NoneData")
         le.fit_transform(keiba_data["grade_code"])
         pickle.dump(le, open(ENCODE_DIR / "grade_code.pickle", "wb"))
-        keiba_data["track_code"].fillna("NoneData", inplace=True)
+        keiba_data["track_code"] = keiba_data["track_code"].fillna("NoneData")
         le.fit_transform(keiba_data["track_code"])
         pickle.dump(le, open(ENCODE_DIR / "track_code.pickle", "wb"))
-        keiba_data["track_code2"].fillna("NoneData", inplace=True)
+        keiba_data["track_code2"] = keiba_data["track_code2"].fillna("NoneData")
         le.fit_transform(keiba_data["track_code2"])
         pickle.dump(le, open(ENCODE_DIR / "track_code2.pickle", "wb"))
-        keiba_data["course_class"].fillna("NoneData", inplace=True)
+        keiba_data["course_class"] = keiba_data["course_class"].fillna("NoneData")
         le.fit_transform(keiba_data["course_class"])
         pickle.dump(le, open(ENCODE_DIR / "course_class.pickle", "wb"))
-        keiba_data["race_type_code"].fillna("NoneData", inplace=True)
+        keiba_data["race_type_code"] = keiba_data["race_type_code"].fillna("NoneData")
         le.fit_transform(keiba_data["race_type_code"])
         pickle.dump(le, open(ENCODE_DIR / "race_type_code.pickle", "wb"))
-        keiba_data["race_symbol_code"].fillna("NoneData", inplace=True)
+        keiba_data["race_symbol_code"] = keiba_data["race_symbol_code"].fillna(
+            "NoneData"
+        )
         le.fit_transform(keiba_data["race_symbol_code"])
         pickle.dump(le, open(ENCODE_DIR / "race_symbol_code.pickle", "wb"))
-        keiba_data["weight_type_code"].fillna("NoneData", inplace=True)
+        keiba_data["weight_type_code"] = keiba_data["weight_type_code"].fillna(
+            "NoneData"
+        )
         le.fit_transform(keiba_data["weight_type_code"])
         pickle.dump(le, open(ENCODE_DIR / "weight_type_code.pickle", "wb"))
-        keiba_data["blinkers"].fillna("NoneData", inplace=True)
+        keiba_data["blinkers"] = keiba_data["blinkers"].fillna("NoneData")
         le.fit_transform(keiba_data["blinkers"])
         pickle.dump(le, open(ENCODE_DIR / "blinkers.pickle", "wb"))
-        keiba_data["abnormal_code"].fillna("NoneData", inplace=True)
+        keiba_data["abnormal_code"] = keiba_data["abnormal_code"].fillna("NoneData")
         le.fit_transform(keiba_data["abnormal_code"])
         pickle.dump(le, open(ENCODE_DIR / "abnormal_code.pickle", "wb"))
-        keiba_data["father_type"].fillna("NoneData", inplace=True)
+        keiba_data["father_type"] = keiba_data["father_type"].fillna("NoneData")
         le.fit_transform(keiba_data["father_type"])
         pickle.dump(le, open(ENCODE_DIR / "father_type.pickle", "wb"))
-        keiba_data["mother_father_type"].fillna("NoneData", inplace=True)
+        keiba_data["mother_father_type"] = keiba_data["mother_father_type"].fillna(
+            "NoneData"
+        )
         le.fit_transform(keiba_data["mother_father_type"])
         pickle.dump(le, open(ENCODE_DIR / "mother_father_type.pickle", "wb"))
 
@@ -887,15 +966,26 @@ class PreProcess:
             print(column)
             le = pickle.load(open(ENCODE_DIR / f"{column}.pickle", "rb"))
             if column in columns_ex:
-                keiba_data[column] = keiba_data[column].astype(str)
-                keiba_data[column].fillna("NoneData", inplace=True)
+                keiba_data[column] = keiba_data[column].fillna("NoneData").astype(str)
                 keiba_data[column] = le.transform(keiba_data[column])
 
-            keiba_data[column + "_p1"] = keiba_data[column + "_p1"].astype(str)
-            keiba_data[column + "_p2"] = keiba_data[column + "_p2"].astype(str)
-            keiba_data[column + "_p3"] = keiba_data[column + "_p3"].astype(str)
-            keiba_data[column + "_p4"] = keiba_data[column + "_p4"].astype(str)
-            keiba_data[column + "_p5"] = keiba_data[column + "_p5"].astype(str)
+            # pandas 3.x の StringDtype では astype(str) 後も float nan が残るため
+            # fillna で先に "NoneData" に変換してから str 化する
+            keiba_data[column + "_p1"] = (
+                keiba_data[column + "_p1"].fillna("NoneData").astype(str)
+            )
+            keiba_data[column + "_p2"] = (
+                keiba_data[column + "_p2"].fillna("NoneData").astype(str)
+            )
+            keiba_data[column + "_p3"] = (
+                keiba_data[column + "_p3"].fillna("NoneData").astype(str)
+            )
+            keiba_data[column + "_p4"] = (
+                keiba_data[column + "_p4"].fillna("NoneData").astype(str)
+            )
+            keiba_data[column + "_p5"] = (
+                keiba_data[column + "_p5"].fillna("NoneData").astype(str)
+            )
 
             keiba_data[column + "_p1"] = keiba_data[column + "_p1"].replace(
                 {"nan": "NoneData"}
@@ -1074,47 +1164,47 @@ class PreProcess:
         keiba_data["kanri"] = le.transform(keiba_data["kanri"])
 
         # print('trainer')
-        keiba_data["trainer"].fillna("NoneData", inplace=True)
+        keiba_data["trainer"] = keiba_data["trainer"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "trainer.pickle", "rb"))
         keiba_data["trainer"] = le.transform(keiba_data["trainer"])
 
         # print('banusi')
-        keiba_data["banusi"].fillna("NoneData", inplace=True)
+        keiba_data["banusi"] = keiba_data["banusi"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "banusi.pickle", "rb"))
         keiba_data["banusi"] = le.transform(keiba_data["banusi"])
 
         # print('breeder')
-        keiba_data["breeder"].fillna("NoneData", inplace=True)
+        keiba_data["breeder"] = keiba_data["breeder"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "breeder.pickle", "rb"))
         keiba_data["breeder"] = le.transform(keiba_data["breeder"])
 
         # print('father')
-        keiba_data["father"].fillna("NoneData", inplace=True)
+        keiba_data["father"] = keiba_data["father"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "father.pickle", "rb"))
         keiba_data["father"] = le.transform(keiba_data["father"])
 
         # print('father_father')
-        keiba_data["father_father"].fillna("NoneData", inplace=True)
+        keiba_data["father_father"] = keiba_data["father_father"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "father_father.pickle", "rb"))
         keiba_data["father_father"] = le.transform(keiba_data["father_father"])
 
         # print('father_mother')
-        keiba_data["father_mother"].fillna("NoneData", inplace=True)
+        keiba_data["father_mother"] = keiba_data["father_mother"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "father_mother.pickle", "rb"))
         keiba_data["father_mother"] = le.transform(keiba_data["father_mother"])
 
         # print('mother')
-        keiba_data["mother"].fillna("NoneData", inplace=True)
+        keiba_data["mother"] = keiba_data["mother"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "mother.pickle", "rb"))
         keiba_data["mother"] = le.transform(keiba_data["mother"])
 
         # print('mother_father')
-        keiba_data["mother_father"].fillna("NoneData", inplace=True)
+        keiba_data["mother_father"] = keiba_data["mother_father"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "mother_father.pickle", "rb"))
         keiba_data["mother_father"] = le.transform(keiba_data["mother_father"])
 
         # print('mother_mother')
-        keiba_data["mother_mother"].fillna("NoneData", inplace=True)
+        keiba_data["mother_mother"] = keiba_data["mother_mother"].fillna("NoneData")
         le = pickle.load(open(ENCODE_DIR / "mother_mother.pickle", "rb"))
         keiba_data["mother_mother"] = le.transform(keiba_data["mother_mother"])
 

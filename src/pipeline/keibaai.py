@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 import pickle
 
-from config import MODEL_DIR, RACECARD_DIR, RESULT_PROCESS_DIR
+from ..config import MODEL_DIR, RACECARD_DIR, RESULT_PROCESS_DIR
 
 
 class KeibaAI:

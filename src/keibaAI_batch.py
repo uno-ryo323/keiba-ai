@@ -2,14 +2,14 @@ import sys
 import datetime
 import pandas as pd
 import requests
-import getinfo
-import racedb
+from .scraping import getinfo
+from .scraping import racedb
 import os
-import scraping
-import preprocess
-import keibaai
+from .scraping import scraping
+from .pipeline import preprocess
+from .pipeline import keibaai
 
-from config import BATCH_DIR, RACELIST_DIR
+from .config import BATCH_DIR, RACELIST_DIR
 
 
 class keibaAIBatch:

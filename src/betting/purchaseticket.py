@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-from config import RACECARD_DIR, URL_IPAT
+from ..config import RACECARD_DIR, URL_IPAT
 
 # 場コード→競馬場名のマッピング
 PLACE_MAP = {

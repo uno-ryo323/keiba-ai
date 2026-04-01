@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from config import ODDS_FILES, RACECARD_DIR
+from ..config import ODDS_FILES, RACECARD_DIR
 
 
 class CalcTicket:

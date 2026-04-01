@@ -19,7 +19,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 # ---------------------------------------------------------------------------
 BASE_DIR = Path("C:/KeibaAI")
 DATA_DIR = BASE_DIR / "Data" / "netKeiba"
-SOURCE_DIR = BASE_DIR / "Source"
+SOURCE_DIR = BASE_DIR / "src"
 
 # ---------------------------------------------------------------------------
 # データパス
@@ -41,7 +41,7 @@ ENCODE_LIST_CSV = DATA_DIR / "common" / "encode_list.csv"
 # ---------------------------------------------------------------------------
 MODEL_DIR = SOURCE_DIR / "model"
 ENCODE_DIR = SOURCE_DIR / "encode"
-BATCH_DIR = SOURCE_DIR / "Batch"
+BATCH_DIR = SOURCE_DIR / "batch"
 
 # ---------------------------------------------------------------------------
 # 認証情報（.env から読み込み）

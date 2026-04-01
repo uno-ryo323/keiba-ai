@@ -1,13 +1,13 @@
-import getinfo
-import preprocess
-import racedb
-import scraping
-import keibaai
+from .scraping import getinfo
+from .pipeline import preprocess
+from .scraping import racedb
+from .scraping import scraping
+from .pipeline import keibaai
 import pandas as pd
 import os
 import warnings
 
-from config import RACECARD_DIR, RACELIST_DIR
+from .config import RACECARD_DIR, RACELIST_DIR
 
 section = 0
 
@@ -33,7 +33,8 @@ def forecast(date, race_id, type_ai, flag):
                 sc.get_race_result(diff)
                 pp.join_netkeiba_target(diff)
                 pp.calc_agari_rank(diff)
-                pp.join_pre_race_result()
+        # diff の有無に関わらず _c.csv を生成する
+        pp.join_pre_race_result()
 
     if type_ai == 1:
         pp.encode_use_LabelEncoder()

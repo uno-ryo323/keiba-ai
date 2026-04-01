@@ -11,7 +11,7 @@ import time
 from bs4 import BeautifulSoup
 import re
 
-from config import NETKEIBA_PASSWORD, NETKEIBA_USER, RACE_ALL_CSV, URL_DB, URL_LOGIN
+from ..config import NETKEIBA_PASSWORD, NETKEIBA_USER, RACE_ALL_CSV, URL_DB, URL_LOGIN
 
 """
 レース結果を管理するクラス
