@@ -362,14 +362,27 @@ class raceDB:
     # JRAのレース結果をnetkeibaから取得する
     # race_ids:取得するレース一覧
     def get_race_result(race_ids):
+        # 取得済み race_id をセットとして読み込み（重複スキップ用）
+        existing_ids = set()
+        try:
+            import pandas as pd
+
+            existing_ids = set(
+                pd.read_csv(
+                    raceDB.PATH,
+                    encoding="cp932",
+                    usecols=["race_id"],
+                    dtype={"race_id": str},
+                    low_memory=False,
+                )["race_id"].dropna()
+            )
+            print(f"取得済み race_id: {len(existing_ids)} 件")
+        except Exception:
+            pass  # ファイルが存在しない・ヘッダなし等は無視
+
         loop_count = 0
         for race_id in race_ids:
             loop_count = loop_count + 1
-            print(loop_count, len(race_ids), race_id)
-            """if loop_count < 187:
-                continue"""
-            """if ('2010' in race_id) and (loop_count < 2351):
-                continue"""
             race_id = str(race_id)
             if race_id == "0":
                 continue
@@ -379,6 +392,11 @@ class raceDB:
                 continue
             if int(place) > 10:
                 continue
+            # 既に取得済みの race_id はスキップ
+            if race_id in existing_ids:
+                print(f"{loop_count}/{len(race_ids)} {race_id} - スキップ（取得済み）")
+                continue
+            print(loop_count, len(race_ids), race_id)
 
             url = f"{URL_DB}/race/{race_id}/"
 
