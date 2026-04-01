@@ -11,16 +11,13 @@ __pycache__/
 *.env
 
 # 大容量データファイル（GitHubにはあげない）
-Data/
+data/
 
 # 学習済みモデル（バイナリ）
 src/model/
 
 # エンコーダ（pickleバイナリ）
 src/encode/
-
-# Chromedriver
-Common/
 
 # 旧版ファイル退避フォルダ（ローカル参照用・Git管理外）
 src/old/
