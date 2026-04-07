@@ -310,4 +310,70 @@ config.py でパスを一元管理していたおかげで、3 箇所（config.p
 
 ---
 
+### データ収集ブランチ（feature/data-collection）— スクレイピング修正・学習パイプライン動作確認
+
+**日付：** 2026-04-07
+**ブランチ：** `feature/data-collection`
+
+---
+
+#### データ収集整備（コミット済み）
+
+- `src/scraping/racelist.py` 新規作成：netKeibaカレンダーから race_id 一覧を取得して CSV 保存
+- `src/scraping/racedb.get_race_result()` 改修：取得済み race_id のスキップ処理追加
+- `tools/mini_pipeline.py` 新規作成：疎通確認用ミニパイプライン（Step 1/4/5）
+
+---
+
+#### スクレイピング修正（本日対応）
+
+**問題：** `racedb.horse_list_split()` がエラー（`ValueError: invalid literal for int()`）
+
+**原因：** netKeiba のレース結果テーブルに 4 列追加（後半指数M・通過指数・追切指数・オッズ指数）。有料会員向け機能のため常に空。列オフセットがずれて「コーナー通過順位」の位置に日本語テキストが入った。
+
+**対応（`src/scraping/racedb.py`）：**
+- インデックス 10 以降のオフセットを +4 に修正
+- ループステップ `i+21` → `i+25`
+- ヘッダー除去文字列を更新
+- 未使用変数に `_` プレフィックスを付与（ruff 対応）
+- `get_horse_info()` を Selenium ドライバー経由に変更（馬ページの JS レンダリング対応）
+- セッションに User-Agent ヘッダを追加
+
+**動作確認：** 2022-02-05 の 36 レース全取得成功（497 行出力）
+
+---
+
+#### 学習パイプライン動作確認（本日対応）
+
+`tools/mini_pipeline.py` Step 4（モデル学習）を実装し、発生したエラーを順次修正。
+
+**修正内容（`src/pipeline/keibaai.py`）：**
+
+| 問題 | 原因 | 対処 |
+|---|---|---|
+| `TypeError: '>=' not supported between str and int` | `rank`・`course` 列が object 型 | `pd.to_numeric(errors='coerce')` で変換 |
+| `KeyError: 'agari_rank_ave'` | 旧パイプライン生成列が存在しない | `errors='ignore'` で対応 |
+| `TypeError: train() got unexpected keyword argument 'evals_result'` | LightGBM 4.x で廃止 | `lgb.record_evaluation()` コールバックに変更 |
+| `ValueError: pandas dtypes must be int, float or bool` | 文字列型列が LightGBM に渡された | `select_dtypes('object')` で一括除外 |
+| データリーク（`rank` 重要度 100%） | 現在レースの着順が特徴量に混入 | コメントアウトされていた後処理ブロックを有効化 |
+| データリーク（`rank_offical` 重要度 61%） | 公式着順・結果由来指数が混入 | `rank_offical`, `rank_arrival`, `abnormal_code`, `rpci`, `pci`, `pci3`, `minus_3f`, `ave_3f` を除外 |
+| `rank_Quinella`, `rank_Place` も混入 | rank から派生したターゲット変数 | `remove_data()` で除外を追加 |
+
+**最終結果：**
+- 特徴量: 273 個（全て予測時に利用可能なもの）
+- binary_logloss: Train 0.1849 / Test 0.2197
+- Early stopping: 237 イテレーション
+- 重要度トップ: `odds_p1`（前走オッズ）22%、`rank_p1`（前走着順）5%
+
+---
+
+#### 次回やること
+
+1. **Step 5（予測）の動作確認**：新モデル（`Win_new.sav`）で `forecast_race()` が正常動作するか確認
+2. **新データで race_jra2.1.csv を更新する手順を整備**（バッチ前処理の未整備部分）
+3. **データ収集の本格実行**：2022-02 以降の全レースを `race_all.csv` に追加
+4. PR 作成・マージ
+
+---
+
 <!-- 以降、作業のたびに追記 -->

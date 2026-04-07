@@ -47,21 +47,23 @@ class KeibaAI:
         data = data.drop("race_name_p4", axis=1)
         data = data.drop("race_name_p5", axis=1)
 
-        """
-        data = data.drop("rank",axis=1)
-        data = data.drop("remarks",axis=1)
-        data = data.drop("time",axis=1) 
-        data = data.drop("time_diff",axis=1) 
-        data = data.drop("time_index",axis=1) 
-
-        data = data.drop("agari",axis=1)
-        data = data.drop("agari_rank",axis=1)
-        data = data.drop("corner_position1",axis=1)
-        data = data.drop("corner_position2",axis=1)
-        data = data.drop("corner_position3",axis=1)
-        data = data.drop("corner_position4",axis=1)
-        data = data.drop("horse_type",axis=1)
-        """
+        # 現在のレース結果列（レース後にしか確定しない値）を除外
+        # 予測時には存在しないためモデルに含めてはいけない
+        data = data.drop("rank", axis=1)
+        data = data.drop("remarks", axis=1, errors="ignore")
+        data = data.drop("time", axis=1)
+        data = data.drop("time_diff", axis=1, errors="ignore")
+        data = data.drop("time_index", axis=1)
+        data = data.drop("agari", axis=1)
+        data = data.drop("agari_rank", axis=1)
+        data = data.drop("corner_position1", axis=1)
+        data = data.drop("corner_position2", axis=1)
+        data = data.drop("corner_position3", axis=1)
+        data = data.drop("corner_position4", axis=1)
+        data = data.drop("horse_type", axis=1)
+        # rank から派生したターゲット変数（rank_Win は make_model 側で Y に使用するため除外しない）
+        data = data.drop("rank_Quinella", axis=1, errors="ignore")
+        data = data.drop("rank_Place", axis=1, errors="ignore")
 
         if ai_type == 0:
             columns = [
@@ -99,30 +101,18 @@ class KeibaAI:
             data = data.drop("agari_rank_p3", axis=1)
             data = data.drop("agari_rank_p4", axis=1)
             data = data.drop("agari_rank_p5", axis=1)
-            data = data.drop("agari_rank_ave", axis=1)
-            """
-            data = data.drop("rpci",axis=1) 
-            data = data.drop("rank_arrival",axis=1)
-            data = data.drop("rank_offical",axis=1)
-            data = data.drop("pci",axis=1) 
-            data = data.drop("pci3",axis=1)
-            data = data.drop("minus_3f",axis=1)
-            data = data.drop("ave_3f",axis=1)
-            data = data.drop("abnormal_code",axis=1)
-            data = data.drop("class_code",axis=1) 
-            data = data.drop("grade_code",axis=1) 
-            data = data.drop("track_code",axis=1) 
-            data = data.drop("track_code2",axis=1) 
-            data = data.drop("course_class",axis=1) 
-            data = data.drop("race_type_code",axis=1) 
-            data = data.drop("race_symbol_code",axis=1) 
-            data = data.drop("weight_type_code",axis=1) 
-            data = data.drop("blinkers",axis=1) 
-            data = data.drop("father_type",axis=1) 
-            data = data.drop("mother_father_type",axis=1) 
-            data = data.drop("race_prize",axis=1) 
-            data = data.drop("corner_count",axis=1) 
-            """
+            data = data.drop(
+                "agari_rank_ave", axis=1, errors="ignore"
+            )  # 旧パイプライン生成列・存在しない場合はスキップ
+            # レース結果由来の指数・公式順位（予測時には存在しないため除外）
+            data = data.drop("rank_offical", axis=1, errors="ignore")
+            data = data.drop("rank_arrival", axis=1, errors="ignore")
+            data = data.drop("abnormal_code", axis=1, errors="ignore")
+            data = data.drop("rpci", axis=1, errors="ignore")
+            data = data.drop("pci", axis=1, errors="ignore")
+            data = data.drop("pci3", axis=1, errors="ignore")
+            data = data.drop("minus_3f", axis=1, errors="ignore")
+            data = data.drop("ave_3f", axis=1, errors="ignore")
         # data = data.drop("rank_Win", axis=1)
         # data = data.drop("rank_Quinella", axis=1)
         # data = data.drop("rank_Place", axis=1)
@@ -180,12 +170,20 @@ class KeibaAI:
         keiba_data = pd.read_csv(
             RESULT_PROCESS_DIR / "race_jra+.csv", sep=",", encoding="cp932"
         )
+        # pandas 3.x 互換: 文字列混在列（取消・除外等）を数値に変換（非数値は NaN → フィルタで除外）
+        keiba_data["course"] = pd.to_numeric(keiba_data["course"], errors="coerce")
+        keiba_data["rank"] = pd.to_numeric(keiba_data["rank"], errors="coerce")
         keiba_data = keiba_data[keiba_data["course"] < 2]
         keiba_data = keiba_data[keiba_data["rank"] >= 1]
         # keiba_data = keiba_data[keiba_data['year'] <= 2020]
         print(len(keiba_data))
         keiba_data = KeibaAI.remove_data(keiba_data, 1)
         # keiba_data = keiba_data.replace({'None',''})
+        # LightGBM は数値型のみ受け付けるため、文字列型列を除外
+        str_cols = keiba_data.select_dtypes(include="object").columns.tolist()
+        if str_cols:
+            print(f"文字列型列を除外: {str_cols}")
+            keiba_data = keiba_data.drop(columns=str_cols)
         # 説明変数（馬場や騎手など）
         X = keiba_data.drop("rank_Win", axis=1)
         # 目的変数（順位）
@@ -222,14 +220,15 @@ class KeibaAI:
                   'num_iterations': 10000, 
                   'early_stopping_round': 100}
         """
-        lgb_results = {}  # 学習の履歴を入れる入物
+        # LightGBM 4.x: evals_result は廃止→ record_evaluation コールバックに変更
+        lgb_results = {}
         model = lgb.train(
             params=params,  # ハイパーパラメータをセット
             train_set=lgb_train,  # 訓練データを訓練用にセット
             valid_sets=[lgb_train, lgb_test],  # 訓練データとテストデータをセット
             valid_names=["Train", "Test"],  # データセットの名前をそれぞれ設定
-            evals_result=lgb_results,
-        )  # 履歴を保存する
+            callbacks=[lgb.record_evaluation(lgb_results)],  # 履歴を保存する
+        )
 
         print(model.params)
         print(model.best_iteration)

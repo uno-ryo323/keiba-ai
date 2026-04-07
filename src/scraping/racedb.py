@@ -33,6 +33,15 @@ class raceDB:
     url_login = URL_LOGIN
 
     session = requests.session()
+    session.headers.update(
+        {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        }
+    )
     ses = session.post(url_login, data=login_info)
 
     PATH = str(RACE_ALL_CSV)
@@ -44,7 +53,7 @@ class raceDB:
         else:
             return default
 
-    def get_horse_info(horse_link, race_id):
+    def get_horse_info(horse_link, race_id, driver):
         bloods = []
         horse_info = []
         return_list = []
@@ -55,14 +64,14 @@ class raceDB:
             horse_number = re.sub(r"<a href=", "", str(horse_number))
             horse_number = re.sub(r" id.*", "", horse_number)
             horse_number = horse_number.replace('"', "")
-            time.sleep(0.5)
-            res = raceDB.session.get(URL_DB + horse_number)
+            time.sleep(1)
+            driver.get(URL_DB + horse_number)
 
             horse_number = horse_number.replace("/", "")
             horse_number = horse_number.replace("horse", "")
             # print(horse_number)
             horse_ids.append(horse_number)
-            soup = BeautifulSoup(res.content, "lxml")
+            soup = BeautifulSoup(driver.page_source, "lxml")
 
             horse_blood = soup.find("table", {"class": "blood_table"})
             horse_blood = horse_blood.find_all("a")
@@ -173,8 +182,10 @@ class raceDB:
         HorseList = re.sub(r"\[", "", str(HorseList))
         HorseList = re.sub(r"\]", "", str(HorseList))
         HorseList = str(HorseList).replace("\xa0", "")
+        # netKeiba は 2024年頃に列を追加（後半指数M・通過指数・追切指数・オッズ指数）
+        # 有料会員向け機能のため常に空。旧ヘッダー文字列も合わせて更新。
         HorseList = HorseList.replace(
-            "着順枠番馬番馬名性齢斤量騎手タイム着差ﾀｲﾑ指数通過上り単勝人気馬体重調教ﾀｲﾑ厩舎ｺﾒﾝﾄ備考調教師馬主賞金(万円)",
+            "着順枠番馬番馬名性齢斤量騎手タイム着差ﾀｲﾑ指数後半指数M通過指数追切指数オッズ指数通過上り単勝人気馬体重調教ﾀｲﾑ厩舎ｺﾒﾝﾄ備考調教師馬主賞金(万円)",
             "",
         )
         tmp = str(HorseList).split("_")
@@ -190,14 +201,15 @@ class raceDB:
             horse_sex = re.sub(r"\d+", "", tmp[i + 4])
             horse_old = tmp[i + 4].replace(str(horse_sex), "")
             handiycap = tmp[i + 5]
-            jockey = tmp[i + 6]
+            _jockey = tmp[i + 6]
             goal_time = tmp[i + 7]
             tmp2 = str(goal_time).split(":")
             if len(tmp2) == 2:
                 goal_time = float(tmp2[0]) * 60 + float(tmp2[1])
-            difference = tmp[i + 8]
+            _difference = tmp[i + 8]
             time_index = tmp[i + 9]
-            corner = tmp[i + 10]
+            # i+10〜i+13 は新規追加列（後半指数M・通過指数・追切指数・オッズ指数）のためスキップ
+            corner = tmp[i + 14]
             corner_position1 = 0
             corner_position2 = 0
             corner_position3 = 0
@@ -217,20 +229,20 @@ class raceDB:
             elif len(corner.split("-")) == 1:
                 corner_position4 = corner.split("-")[0]
 
-            kaku4 = tmp[i + 10].split("-")[-1]
-            agari = tmp[i + 11]
-            odds = tmp[i + 12]
-            rank_popular = tmp[i + 13]
-            weight = tmp[i + 14].split("(")[0]
+            _kaku4 = tmp[i + 14].split("-")[-1]
+            agari = tmp[i + 15]
+            odds = tmp[i + 16]
+            rank_popular = tmp[i + 17]
+            weight = tmp[i + 18].split("(")[0]
             zougen = (
-                tmp[i + 14].replace(str(weight), "").replace("(", "").replace(")", "")
+                tmp[i + 18].replace(str(weight), "").replace("(", "").replace(")", "")
             )
-            remarks = tmp[i + 17]
+            remarks = tmp[i + 21]
             kanri = ""
-            if tmp[i + 18] != "":
-                kanri = tmp[i + 18][0]
-            trainer = tmp[i + 18][1:]
-            banusi = tmp[i + 19]
+            if tmp[i + 22] != "":
+                kanri = tmp[i + 22][0]
+            _trainer = tmp[i + 22][1:]
+            _banusi = tmp[i + 23]
 
             Race_lists.append(
                 str(rank_race)
@@ -273,7 +285,7 @@ class raceDB:
                 + ","
                 + remarks
             )
-            i = i + 21
+            i = i + 25
             count = count + 1
         return Race_lists
 
@@ -380,178 +392,189 @@ class raceDB:
         except Exception:
             pass  # ファイルが存在しない・ヘッダなし等は無視
 
+        # 馬ページ取得用 Selenium ドライバー（JS レンダリングが必要なため）
+        from .getinfo import GetInfo
+
+        driver = GetInfo._create_driver()
+        GetInfo.login_process(driver)
+
         loop_count = 0
-        for race_id in race_ids:
-            loop_count = loop_count + 1
-            race_id = str(race_id)
-            if race_id == "0":
-                continue
-            race_num = race_id[-2:]
-            place = race_id[4:6]
-            if not place.isdigit():
-                continue
-            if int(place) > 10:
-                continue
-            # 既に取得済みの race_id はスキップ
-            if race_id in existing_ids:
-                print(f"{loop_count}/{len(race_ids)} {race_id} - スキップ（取得済み）")
-                continue
-            print(loop_count, len(race_ids), race_id)
+        try:
+            for race_id in race_ids:
+                loop_count = loop_count + 1
+                race_id = str(race_id)
+                if race_id == "0":
+                    continue
+                race_num = race_id[-2:]
+                place = race_id[4:6]
+                if not place.isdigit():
+                    continue
+                if int(place) > 10:
+                    continue
+                # 既に取得済みの race_id はスキップ
+                if race_id in existing_ids:
+                    print(
+                        f"{loop_count}/{len(race_ids)} {race_id} - スキップ（取得済み）"
+                    )
+                    continue
+                print(loop_count, len(race_ids), race_id)
 
-            url = f"{URL_DB}/race/{race_id}/"
+                url = f"{URL_DB}/race/{race_id}/"
 
-            time.sleep(0.5)
-            res = raceDB.session.get(url)
-            res.encoding = res.apparent_encoding
+                time.sleep(0.5)
+                res = raceDB.session.get(url)
+                res.encoding = res.apparent_encoding
 
-            soup = BeautifulSoup(res.content, "lxml")
-            title = soup.find("p", class_="smalltxt")
+                soup = BeautifulSoup(res.content, "lxml")
+                title = soup.find("p", class_="smalltxt")
 
-            race_name = soup.find_all("h1")
-            if len(race_name) < 2:
-                continue
-            race_name = str(race_name[1]).replace("<h1>", "")
-            race_name = re.sub(r"<!.*", "", race_name)
-            race_info1 = raceDB.get_race_info1(title)
+                race_name = soup.find_all("h1")
+                if len(race_name) < 2:
+                    continue
+                race_name = str(race_name[1]).replace("<h1>", "")
+                race_name = re.sub(r"<!.*", "", race_name)
+                race_info1 = raceDB.get_race_info1(title)
 
-            condition = soup.find("dl", class_="racedata fc")
-            race_info2 = raceDB.get_race_info2(condition)
-            table = soup.find("table", class_="race_table_01 nk_tb_common")
-            link = table.find_all("a")
-            horse_link = [
-                link[i] for i in range(0, len(link)) if "umalink" in str(link[i])
-            ]
-            jockey_link = [
-                link[i] for i in range(0, len(link)) if "jockey" in str(link[i])
-            ]
-            horse_info = raceDB.get_horse_info(horse_link, race_id)
-            jockey_info = raceDB.get_jockey_info(jockey_link)
+                condition = soup.find("dl", class_="racedata fc")
+                race_info2 = raceDB.get_race_info2(condition)
+                table = soup.find("table", class_="race_table_01 nk_tb_common")
+                link = table.find_all("a")
+                horse_link = [
+                    link[i] for i in range(0, len(link)) if "umalink" in str(link[i])
+                ]
+                jockey_link = [
+                    link[i] for i in range(0, len(link)) if "jockey" in str(link[i])
+                ]
+                horse_info = raceDB.get_horse_info(horse_link, race_id, driver)
+                jockey_info = raceDB.get_jockey_info(jockey_link)
 
-            # ,変換
-            # raceDB.comvert_comma(race_info1,race_info2,horse_info,jockey_info)
-            # print(race_info1,race_info2,horse_info,jockey_info)
-            race_info1 = [
-                [str(s).replace("amp;", "") for s in text] for text in race_info1
-            ]
-            race_info2 = [str(s).replace("amp;", "") for s in race_info2]
-            horse_info = [
-                [str(s).replace("amp;", "") for s in text] for text in horse_info
-            ]
-            jockey_info = [str(s).replace("amp;", "") for s in jockey_info]
-            # print(race_info1,race_info2,horse_info,jockey_info)
+                # ,変換
+                # raceDB.comvert_comma(race_info1,race_info2,horse_info,jockey_info)
+                # print(race_info1,race_info2,horse_info,jockey_info)
+                race_info1 = [
+                    [str(s).replace("amp;", "") for s in text] for text in race_info1
+                ]
+                race_info2 = [str(s).replace("amp;", "") for s in race_info2]
+                horse_info = [
+                    [str(s).replace("amp;", "") for s in text] for text in horse_info
+                ]
+                jockey_info = [str(s).replace("amp;", "") for s in jockey_info]
+                # print(race_info1,race_info2,horse_info,jockey_info)
 
-            result_table = raceDB.horse_list_split(table)
-            # print(result_table)
-            horse_len = len(result_table)
-            types = []
-            # 脚質の取得
-            for n in range(0, horse_len):
-                tmp = result_table[n].split(",")
-                corner_position_list = [tmp[13], tmp[14], tmp[15], tmp[16]]
-                types.append(raceDB.get_horse_type(corner_position_list, horse_len))
+                result_table = raceDB.horse_list_split(table)
+                # print(result_table)
+                horse_len = len(result_table)
+                types = []
+                # 脚質の取得
+                for n in range(0, horse_len):
+                    tmp = result_table[n].split(",")
+                    corner_position_list = [tmp[13], tmp[14], tmp[15], tmp[16]]
+                    types.append(raceDB.get_horse_type(corner_position_list, horse_len))
 
-            # csvに書き込み
-            out = codecs.open(raceDB.PATH, "a", encoding="shift_jis")
-            count1 = 0
-            count2 = 0
-            count3 = 0
-            for o in range(0, horse_len):
-                result_str = (
-                    race_id
-                    + ","
-                    + str(race_info1[0][0])
-                    + ","
-                    + str(race_info1[0][1])
-                    + ","
-                    + str(race_info1[0][2])
-                )
-                result_str = result_str + "," + race_name + "," + place
-                result_str = (
-                    result_str
-                    + ","
-                    + str(race_info1[1][0])
-                    + ","
-                    + str(race_info1[1][1])
-                    + ","
-                    + race_num
-                )
-                result_str = (
-                    result_str
-                    + ","
-                    + str(race_info1[2][0])
-                    + ","
-                    + str(race_info1[3][0])
-                    + ","
-                    + str(race_info1[3][1])
-                )
-                result_str = (
-                    result_str
-                    + ","
-                    + str(race_info2[0])
-                    + ","
-                    + str(race_info2[1])
-                    + ","
-                    + str(race_info2[2])
-                    + ","
-                    + str(race_info2[3])
-                    + ","
-                    + str(race_info2[4])
-                )
-                result_str = (
-                    result_str
-                    + ","
-                    + str(horse_len)
-                    + ","
-                    + result_table[o]
-                    + ","
-                    + str(types[o])
-                )
-                result_str = (
-                    result_str
-                    + ","
-                    + jockey_info[o]
-                    + ","
-                    + horse_info[0][count1]
-                    + ","
-                    + horse_info[0][count1 + 1]
-                    + ","
-                    + horse_info[0][count1 + 2]
-                )
-                result_str = (
-                    result_str
-                    + ","
-                    + horse_info[1][count2]
-                    + ","
-                    + horse_info[1][count2 + 1]
-                    + ","
-                    + horse_info[1][count2 + 2]
-                    + ","
-                    + horse_info[1][count2 + 3]
-                    + ","
-                    + horse_info[1][count2 + 4]
-                    + ","
-                    + horse_info[1][count2 + 5]
-                )
-                result_str = result_str + "," + horse_info[2][o]
-                result_str = (
-                    result_str
-                    + ","
-                    + str(horse_info[3][count3])
-                    + ","
-                    + str(horse_info[3][count3 + 1])
-                    + ","
-                    + str(horse_info[3][count3 + 2])
-                    + ","
-                    + str(horse_info[3][count3 + 3])
-                    + ","
-                    + str(horse_info[3][count3 + 4])
-                    + ","
-                    + str(horse_info[3][count3 + 5])
-                )
-                # print(result_str)
-                count1 = count1 + 3
-                count2 = count2 + 6
-                count3 = count3 + 6
-                result_str = result_str.replace("", "")
-                out.write(result_str + "\n")
-            out.close()
+                # csvに書き込み
+                out = codecs.open(raceDB.PATH, "a", encoding="shift_jis")
+                count1 = 0
+                count2 = 0
+                count3 = 0
+                for o in range(0, horse_len):
+                    result_str = (
+                        race_id
+                        + ","
+                        + str(race_info1[0][0])
+                        + ","
+                        + str(race_info1[0][1])
+                        + ","
+                        + str(race_info1[0][2])
+                    )
+                    result_str = result_str + "," + race_name + "," + place
+                    result_str = (
+                        result_str
+                        + ","
+                        + str(race_info1[1][0])
+                        + ","
+                        + str(race_info1[1][1])
+                        + ","
+                        + race_num
+                    )
+                    result_str = (
+                        result_str
+                        + ","
+                        + str(race_info1[2][0])
+                        + ","
+                        + str(race_info1[3][0])
+                        + ","
+                        + str(race_info1[3][1])
+                    )
+                    result_str = (
+                        result_str
+                        + ","
+                        + str(race_info2[0])
+                        + ","
+                        + str(race_info2[1])
+                        + ","
+                        + str(race_info2[2])
+                        + ","
+                        + str(race_info2[3])
+                        + ","
+                        + str(race_info2[4])
+                    )
+                    result_str = (
+                        result_str
+                        + ","
+                        + str(horse_len)
+                        + ","
+                        + result_table[o]
+                        + ","
+                        + str(types[o])
+                    )
+                    result_str = (
+                        result_str
+                        + ","
+                        + jockey_info[o]
+                        + ","
+                        + horse_info[0][count1]
+                        + ","
+                        + horse_info[0][count1 + 1]
+                        + ","
+                        + horse_info[0][count1 + 2]
+                    )
+                    result_str = (
+                        result_str
+                        + ","
+                        + horse_info[1][count2]
+                        + ","
+                        + horse_info[1][count2 + 1]
+                        + ","
+                        + horse_info[1][count2 + 2]
+                        + ","
+                        + horse_info[1][count2 + 3]
+                        + ","
+                        + horse_info[1][count2 + 4]
+                        + ","
+                        + horse_info[1][count2 + 5]
+                    )
+                    result_str = result_str + "," + horse_info[2][o]
+                    result_str = (
+                        result_str
+                        + ","
+                        + str(horse_info[3][count3])
+                        + ","
+                        + str(horse_info[3][count3 + 1])
+                        + ","
+                        + str(horse_info[3][count3 + 2])
+                        + ","
+                        + str(horse_info[3][count3 + 3])
+                        + ","
+                        + str(horse_info[3][count3 + 4])
+                        + ","
+                        + str(horse_info[3][count3 + 5])
+                    )
+                    # print(result_str)
+                    count1 = count1 + 3
+                    count2 = count2 + 6
+                    count3 = count3 + 6
+                    result_str = result_str.replace("", "")
+                    out.write(result_str + "\n")
+                out.close()
+        finally:
+            driver.quit()
