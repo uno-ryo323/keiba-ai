@@ -96,15 +96,11 @@ class KeibaAI:
                 for i in range(1, 6):
                     data = data.drop(column + "_p" + str(i), axis=1)
         else:
-            data = data.drop("agari_rank_p1", axis=1)
-            data = data.drop("agari_rank_p2", axis=1)
-            data = data.drop("agari_rank_p3", axis=1)
-            data = data.drop("agari_rank_p4", axis=1)
-            data = data.drop("agari_rank_p5", axis=1)
+            # agari_rank_p1~p5 は前走の上がり3F順位 = 正当な特徴量のため除外しない
             data = data.drop(
                 "agari_rank_ave", axis=1, errors="ignore"
             )  # 旧パイプライン生成列・存在しない場合はスキップ
-            # レース結果由来の指数・公式順位（予測時には存在しないため除外）
+            # 現レース結果由来の指数・公式順位（予測時には存在しないため除外）
             data = data.drop("rank_offical", axis=1, errors="ignore")
             data = data.drop("rank_arrival", axis=1, errors="ignore")
             data = data.drop("abnormal_code", axis=1, errors="ignore")
