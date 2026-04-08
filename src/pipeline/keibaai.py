@@ -48,19 +48,19 @@ class KeibaAI:
         data = data.drop("race_name_p5", axis=1)
 
         # 現在のレース結果列（レース後にしか確定しない値）を除外
-        # 予測時には存在しないためモデルに含めてはいけない
-        data = data.drop("rank", axis=1)
+        # 予測時には存在しないため errors="ignore" で安全にスキップ
+        data = data.drop("rank", axis=1, errors="ignore")
         data = data.drop("remarks", axis=1, errors="ignore")
-        data = data.drop("time", axis=1)
+        data = data.drop("time", axis=1, errors="ignore")
         data = data.drop("time_diff", axis=1, errors="ignore")
-        data = data.drop("time_index", axis=1)
-        data = data.drop("agari", axis=1)
-        data = data.drop("agari_rank", axis=1)
-        data = data.drop("corner_position1", axis=1)
-        data = data.drop("corner_position2", axis=1)
-        data = data.drop("corner_position3", axis=1)
-        data = data.drop("corner_position4", axis=1)
-        data = data.drop("horse_type", axis=1)
+        data = data.drop("time_index", axis=1, errors="ignore")
+        data = data.drop("agari", axis=1, errors="ignore")
+        data = data.drop("agari_rank", axis=1, errors="ignore")
+        data = data.drop("corner_position1", axis=1, errors="ignore")
+        data = data.drop("corner_position2", axis=1, errors="ignore")
+        data = data.drop("corner_position3", axis=1, errors="ignore")
+        data = data.drop("corner_position4", axis=1, errors="ignore")
+        data = data.drop("horse_type", axis=1, errors="ignore")
         # rank から派生したターゲット変数（rank_Win は make_model 側で Y に使用するため除外しない）
         data = data.drop("rank_Quinella", axis=1, errors="ignore")
         data = data.drop("rank_Place", axis=1, errors="ignore")
@@ -177,6 +177,19 @@ class KeibaAI:
         keiba_data = keiba_data[keiba_data["rank"] >= 1]
         # keiba_data = keiba_data[keiba_data['year'] <= 2020]
         print(len(keiba_data))
+
+        # ターゲット変数を先に抽出（remove_data で rank_Quinella/rank_Place が削除される前に保存）
+        y_win = keiba_data["rank_Win"]
+        y_quinella = (
+            keiba_data["rank_Quinella"]
+            if "rank_Quinella" in keiba_data.columns
+            else None
+        )
+        y_place = (
+            keiba_data["rank_Place"] if "rank_Place" in keiba_data.columns else None
+        )
+
+        # 特徴量の準備（remove_data で結果列・不要列を除去）
         keiba_data = KeibaAI.remove_data(keiba_data, 1)
         # keiba_data = keiba_data.replace({'None',''})
         # LightGBM は数値型のみ受け付けるため、文字列型列を除外
@@ -184,19 +197,10 @@ class KeibaAI:
         if str_cols:
             print(f"文字列型列を除外: {str_cols}")
             keiba_data = keiba_data.drop(columns=str_cols)
-        # 説明変数（馬場や騎手など）
+        # rank_Win は remove_data では除外されないため X から手動で除去
         X = keiba_data.drop("rank_Win", axis=1)
-        # 目的変数（順位）
-        Y = keiba_data["rank_Win"]
-        # データの準備
-        train_X, test_X, train_Y, test_Y = train_test_split(
-            X, Y, test_size=0.2, shuffle=True, random_state=0
-        )
-        lgb_train = lgb.Dataset(train_X, train_Y)
-        lgb_test = lgb.Dataset(test_X, test_Y, reference=lgb_train)
 
         # LightGBMのハイパーパラメータを設定
-
         params = {
             "objective": "binary",
             "metric": "binary_logloss",
@@ -206,41 +210,55 @@ class KeibaAI:
         }
 
         """
-        params = {'objective': 'binary', 
-                  'metric': 'binary_logloss', 
-                  'boosting_type': 'gbdt', 
-                  'feature_pre_filter': False, 
-                  'lambda_l1': 3.931689569206292, 
-                  'lambda_l2': 0.7371585319587182, 
-                  'num_leaves': 5, 
-                  'feature_fraction': 0.8, 
-                  'bagging_fraction': 0.5589443199795181, 
-                  'bagging_freq': 6, 
-                  'min_child_samples': 5, 
-                  'num_iterations': 10000, 
+        params = {'objective': 'binary',
+                  'metric': 'binary_logloss',
+                  'boosting_type': 'gbdt',
+                  'feature_pre_filter': False,
+                  'lambda_l1': 3.931689569206292,
+                  'lambda_l2': 0.7371585319587182,
+                  'num_leaves': 5,
+                  'feature_fraction': 0.8,
+                  'bagging_fraction': 0.5589443199795181,
+                  'bagging_freq': 6,
+                  'min_child_samples': 5,
+                  'num_iterations': 10000,
                   'early_stopping_round': 100}
         """
-        # LightGBM 4.x: evals_result は廃止→ record_evaluation コールバックに変更
-        lgb_results = {}
-        model = lgb.train(
-            params=params,  # ハイパーパラメータをセット
-            train_set=lgb_train,  # 訓練データを訓練用にセット
-            valid_sets=[lgb_train, lgb_test],  # 訓練データとテストデータをセット
-            valid_names=["Train", "Test"],  # データセットの名前をそれぞれ設定
-            callbacks=[lgb.record_evaluation(lgb_results)],  # 履歴を保存する
-        )
 
-        print(model.params)
-        print(model.best_iteration)
-        print(model.best_score)
-        filename = MODEL_DIR / "Win_new.sav"
-        pickle.dump(model, open(filename, "wb"))
-        KeibaAI.show_feature_value(X.columns, model)
+        # Win / Quinella / Place の順に学習して _new.sav として保存
+        targets = [("Win", y_win), ("Quinella", y_quinella), ("Place", y_place)]
+        for model_name, Y in targets:
+            if Y is None:
+                print(f"{model_name}: ターゲット列なし、スキップ")
+                continue
+            print(f"\n--- {model_name} モデル学習 ---")
+            train_X, test_X, train_Y, test_Y = train_test_split(
+                X, Y, test_size=0.2, shuffle=True, random_state=0
+            )
+            lgb_train = lgb.Dataset(train_X, train_Y)
+            lgb_test = lgb.Dataset(test_X, test_Y, reference=lgb_train)
+            # LightGBM 4.x: evals_result は廃止→ record_evaluation コールバックに変更
+            lgb_results = {}
+            model = lgb.train(
+                params=params,
+                train_set=lgb_train,
+                valid_sets=[lgb_train, lgb_test],
+                valid_names=["Train", "Test"],
+                callbacks=[lgb.record_evaluation(lgb_results)],
+            )
+            print(model.params)
+            print(model.best_iteration)
+            print(model.best_score)
+            filename = MODEL_DIR / f"{model_name}_new.sav"
+            pickle.dump(model, open(filename, "wb"))
+            KeibaAI.show_feature_value(X.columns, model)
 
     def forecast_race(self, ai_type):
-        # modelのインポート(ToDo)
+        # ai_type: 0 → _model2.sav（旧モデルA）, 2 → _new.sav（新モデル）, else → _3.sav（旧モデルB）
         if ai_type == 0:
             model_ver = "_model2"
+        elif ai_type == 2:
+            model_ver = "_new"
         else:
             model_ver = "_3"
 
@@ -258,6 +276,15 @@ class KeibaAI:
 
         temp_data = test_data
         test_data = KeibaAI.remove_data(test_data, ai_type)
+        # モデルの特徴量と予測データの列を合わせる
+        # （レースカードデータに存在しない列をゼロ埋めして補完）
+        model_features = model1.feature_name()
+        missing_cols = [c for c in model_features if c not in test_data.columns]
+        if missing_cols:
+            print(f"[forecast_race] 欠損列をゼロ埋め: {missing_cols}")
+            for col in missing_cols:
+                test_data[col] = 0
+        test_data = test_data[model_features]
         # 予測の実行
         y_pred_prob1 = model1.predict(test_data)
         y_pred_prob2 = model2.predict(test_data)

@@ -72,14 +72,12 @@ def step1_collect():
 def step2_preprocess():
     print("\n=== Step 2: 前処理（race_jra2.1_mini.csv 生成） ===")
     import pandas as pd
-    from unittest.mock import patch
 
     if not MINI_RACE_ALL.exists():
         print("ERROR: race_all_mini.csv がありません。Step 1 を先に実行してください")
         return
 
-    df = pd.read_csv(MINI_RACE_ALL, encoding="cp932", low_memory=False,
-                     header=None)
+    df = pd.read_csv(MINI_RACE_ALL, encoding="cp932", low_memory=False, header=None)
     print(f"race_all_mini.csv: {len(df)} 行")
 
     # preprocess の前処理ロジックは race_jra2.x.csv を直接生成するため、
@@ -97,6 +95,7 @@ def step4_train():
     print("\n=== Step 4: モデル学習 ===")
     import warnings
     import pandas as pd
+
     warnings.filterwarnings("ignore")
 
     from src.config import RESULT_PROCESS_DIR
@@ -114,9 +113,9 @@ def step4_train():
     else:
         print(f"race_jra+.csv 既存: {dst_csv}")
 
-    print("モデル学習を開始します（時間がかかります）...")
+    print("モデル学習を開始します（Win / Quinella / Place の順、時間がかかります）...")
     KeibaAI.make_model()
-    print("モデル学習完了")
+    print("モデル学習完了（Win_new.sav / Quinella_new.sav / Place_new.sav）")
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +124,7 @@ def step4_train():
 def step5_predict():
     print("\n=== Step 5: 予測・買い目確認（既存レースデータ使用） ===")
     import warnings
+
     warnings.filterwarnings("ignore")
 
     from src.pipeline.keibaai import KeibaAI
@@ -133,7 +133,9 @@ def step5_predict():
     print(f"対象: {PRED_DATE} / {PRED_RACE_ID}")
 
     ai = KeibaAI(PRED_DATE, PRED_RACE_ID)
-    result = ai.forecast_race("Win")
+    result = ai.forecast_race(
+        2
+    )  # ai_type=2 → Win_new.sav / Quinella_new.sav / Place_new.sav
     print("予測完了")
     print(result[["horse_name", "Win", "horse_gate", "popular_rank"]].head())
 

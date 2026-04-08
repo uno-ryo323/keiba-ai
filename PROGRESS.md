@@ -367,12 +367,40 @@ config.py でパスを一元管理していたおかげで、3 箇所（config.p
 
 ---
 
+---
+
+#### Step 5 動作確認 + モデル仕様 MD 作成（2026-04-08）
+
+**修正内容：**
+
+| ファイル | 内容 |
+|--------|------|
+| `src/pipeline/keibaai.py` - `make_model()` | Win のみ → Win/Quinella/Place の 3 モデル学習に拡張。`_new.sav` として保存 |
+| `src/pipeline/keibaai.py` - `forecast_race()` | `ai_type=2` → `_new.sav` ロードのルートを追加 |
+| `src/pipeline/keibaai.py` - `remove_data()` | 結果列のドロップに `errors="ignore"` を追加（レースカードデータには存在しない列のため）|
+| `src/betting/calcticket.py` - `calc_Trio()` | `horse_gate3` の `dtype=int` 指定を削除（float64 データに int を強制する pandas 3.x エラーの修正）|
+| `tools/mini_pipeline.py` | Step 5 を `forecast_race(2)` に変更（新モデル使用）|
+| `docs/model_training.md` | 学習データ・除外列・アルゴリズム・モデルの仕様を整理 |
+
+**発生したエラーと対処：**
+
+| エラー | 原因 | 対処 |
+|--------|------|------|
+| `KeyError: 'rank'` in remove_data() | レースカードデータに `rank`（着順）が存在しない | `errors="ignore"` 追加 |
+| 特徴量数ミスマッチ（273 vs 266） | 学習データにある 7 列（`class_code` 等）がレースカードデータにない | `forecast_race()` 内でゼロ埋め補完 |
+| `ValueError: cannot safely convert int64 from float64` in calc_Trio() | `fuku3.csv` の `horse_gate3` が float64 なのに dtype=int を強制 | dtype 指定を削除 |
+
+**Step 5 最終結果：**
+- `forecast_race(2)` → Win_new / Quinella_new / Place_new モデルで 16 頭分のスコア出力 ✅
+- `CalcTicket.main()` → 買い目算出完了 ✅
+
+---
+
 #### 次回やること
 
-1. **Step 5（予測）の動作確認**：新モデル（`Win_new.sav`）で `forecast_race()` が正常動作するか確認
-2. **新データで race_jra2.1.csv を更新する手順を整備**（バッチ前処理の未整備部分）
-3. **データ収集の本格実行**：2022-02 以降の全レースを `race_all.csv` に追加
-4. PR 作成・マージ
+1. **新データで race_jra2.1.csv を更新する手順を整備**（バッチ前処理の未整備部分）
+2. **データ収集の本格実行**：2022-02 以降の全レースを `race_all.csv` に追加
+3. **PR 作成・マージ**
 
 ---
 
