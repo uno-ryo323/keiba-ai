@@ -783,6 +783,7 @@ class PreProcess:
             RESULT_PROCESS_DIR / "race_15-21_c2.csv",
             sep=",",
             encoding="utf-8",
+            low_memory=False,
             dtype={
                 "horse_id": object,
                 "race_id": object,
