@@ -97,7 +97,9 @@ def step2_patch_agari_rank():
         usecols=["race_id", "horse_id", "agari_rank"],
         low_memory=False,
     )
-    print(f"  {len(race_all)} 行")
+    # (race_id, horse_id) 重複がある場合は最初の行を採用
+    race_all = race_all.drop_duplicates(subset=["race_id", "horse_id"])
+    print(f"  {len(race_all)} 行（重複除去後）")
 
     print("race_15-21_c2.csv を読み込み中（時間がかかります）...")
     dtype_map = {
