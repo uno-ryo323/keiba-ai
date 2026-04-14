@@ -45,6 +45,10 @@ class JudgeTicket:
         html = driver.page_source
         driver.close()
 
+        result_path = RACECARD_DIR / self.date / self.race_id / "result.csv"
+        result_path.parent.mkdir(parents=True, exist_ok=True)
+        self.file_result = open(result_path, "w", encoding="cp932")
+
         soup = BeautifulSoup(html, "lxml")
         table = soup.find_all("table", class_="Payout_Detail_Table")
 
@@ -104,6 +108,8 @@ class JudgeTicket:
                 for i, loop_count in zip(range(0, len(result), 3), range(len(payout))):
                     out_str = f"{ticket_name},{result[i]},{result[i+1]},{result[i+2]},{float(payout[loop_count])/100}"
                     self.file_result.write(out_str + "\n")
+
+        self.file_result.close()
 
     def judge_ticket(self):
         """購入チケットと結果を照合して的中フラグを付与する"""
