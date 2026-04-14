@@ -67,25 +67,64 @@ def step1_collect():
 
 
 # ---------------------------------------------------------------------------
-# Step 2: 前処理
+# Step 2: agari_rank_p1~p5 パッチ
 # ---------------------------------------------------------------------------
-def step2_preprocess():
-    print("\n=== Step 2: 前処理（race_jra2.1_mini.csv 生成） ===")
+def step2_patch_agari_rank():
+    """
+    race_15-21_c2.csv の agari_rank_p1~p5 を race_all.csv から補完する。
+
+    race_15-21_c2.csv 生成時に calc_agari_rank() が未実行だったため、
+    agari_rank_p1~p5 が全NaNになっている問題を修正する。
+    """
+    print("\n=== Step 2: agari_rank_p1~p5 パッチ ===")
     import pandas as pd
 
-    if not MINI_RACE_ALL.exists():
-        print("ERROR: race_all_mini.csv がありません。Step 1 を先に実行してください")
+    src_csv = ROOT / "data/netkeiba/result/process/race_15-21_c2.csv"
+    race_all_csv = ROOT / "data/netkeiba/result/BackUp/race_all.csv"
+
+    if not src_csv.exists():
+        print(f"ERROR: {src_csv} が見つかりません")
+        return
+    if not race_all_csv.exists():
+        print(f"ERROR: {race_all_csv} が見つかりません")
         return
 
-    df = pd.read_csv(MINI_RACE_ALL, encoding="cp932", low_memory=False, header=None)
-    print(f"race_all_mini.csv: {len(df)} 行")
+    print("race_all.csv を読み込み中...")
+    race_all = pd.read_csv(
+        race_all_csv,
+        encoding="cp932",
+        dtype={"race_id": str, "horse_id": str},
+        usecols=["race_id", "horse_id", "agari_rank"],
+        low_memory=False,
+    )
+    print(f"  {len(race_all)} 行")
 
-    # preprocess の前処理ロジックは race_jra2.x.csv を直接生成するため、
-    # ここでは race_all_mini.csv の内容確認と列数チェックのみ行う
-    # （本格的な前処理は Step 2 で既存 preprocess.py を流用する）
-    print("カラム数:", len(df.columns))
-    print("先頭行:", df.iloc[0].tolist()[:10], "...")
-    print("※ 本格的な前処理（race_jra2.1 生成）は既存データ量が必要なため別途実施")
+    print("race_15-21_c2.csv を読み込み中（時間がかかります）...")
+    dtype_map = {
+        "horse_id": str,
+        "race_id": str,
+        "pre_race1": str,
+        "pre_race2": str,
+        "pre_race3": str,
+        "pre_race4": str,
+        "pre_race5": str,
+    }
+    df = pd.read_csv(src_csv, encoding="utf-8", dtype=dtype_map, low_memory=False)
+    print(f"  {len(df)} 行")
+
+    # pre_race{n} + horse_id で race_all.csv の agari_rank を逆引きして埋める
+    for n in range(1, 6):
+        col_pre = f"pre_race{n}"
+        col_rank = f"agari_rank_p{n}"
+        temp = df[[col_pre, "horse_id"]].rename(columns={col_pre: "race_id"})
+        merged = temp.merge(race_all, on=["race_id", "horse_id"], how="left")
+        df[col_rank] = merged["agari_rank"].values
+        filled = df[col_rank].notna().sum()
+        print(f"  {col_rank}: {filled} 件補完")
+
+    print("保存中...")
+    df.to_csv(src_csv, encoding="utf-8", index=False)
+    print(f"完了: {src_csv}")
 
 
 # ---------------------------------------------------------------------------
@@ -104,14 +143,12 @@ def step4_train():
     src_csv = RESULT_PROCESS_DIR / "race_15-21_c2.csv"
     dst_csv = RESULT_PROCESS_DIR / "race_jra+.csv"
 
-    # race_jra+.csv が未生成の場合は race_15-21_c2.csv (UTF-8) を cp932 に変換して作成
-    if not dst_csv.exists():
-        print(f"race_jra+.csv を生成します: {src_csv} → {dst_csv}")
-        df = pd.read_csv(src_csv, encoding="utf-8", low_memory=False)
-        df.to_csv(dst_csv, encoding="cp932", index=False)
-        print(f"生成完了: {len(df)} 行")
-    else:
-        print(f"race_jra+.csv 既存: {dst_csv}")
+    # race_15-21_c2.csv (UTF-8) を cp932 に変換して race_jra+.csv を生成
+    # ※ Step 2 でパッチした内容を反映するため、毎回再生成する
+    print(f"race_jra+.csv を生成します: {src_csv} → {dst_csv}")
+    df = pd.read_csv(src_csv, encoding="utf-8", low_memory=False)
+    df.to_csv(dst_csv, encoding="cp932", index=False)
+    print(f"生成完了: {len(df)} 行")
 
     print("モデル学習を開始します（Win / Quinella / Place の順、時間がかかります）...")
     KeibaAI.make_model()
@@ -150,6 +187,7 @@ def step5_predict():
 # ---------------------------------------------------------------------------
 STEPS = {
     "1": ("レース結果収集", step1_collect),
+    "2": ("agari_rank パッチ", step2_patch_agari_rank),
     "4": ("モデル学習", step4_train),
     "5": ("予測・買い目確認", step5_predict),
 }
@@ -159,7 +197,8 @@ if __name__ == "__main__":
 
     if arg == "all":
         step1_collect()
-        step2_preprocess()
+        step2_patch_agari_rank()
+        step4_train()
         step5_predict()
     elif arg in STEPS:
         label, func = STEPS[arg]

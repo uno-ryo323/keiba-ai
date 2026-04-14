@@ -14,18 +14,39 @@ racelist.py — netKeibaのカレンダーから race_id 一覧を取得する
 import calendar
 import re
 import sys
+import time
 from datetime import datetime, timedelta
 
 import pandas as pd
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from ..config import ASSETS_DIR, URL_CALENDAR, URL_RACELIST_PAGE
 from .getinfo import GetInfo
+
+_WAIT_TIMEOUT = 20  # JS描画待機の最大秒数
+_LOGIN_WAIT = 3  # ログイン完了後の安定待機（秒）
+_ACCESS_INTERVAL = 2  # ページ取得ごとのアクセス間隔（秒）
 
 
 def _get_soup(driver, url: str) -> BeautifulSoup:
     """指定URLに遷移してBeautifulSoupオブジェクトを返す"""
     driver.get(url)
+    return BeautifulSoup(driver.page_source, "lxml")
+
+
+def _get_soup_wait(driver, url: str, wait_css: str) -> BeautifulSoup:
+    """指定URLに遷移し、wait_css の要素が描画されるまで待機してから返す"""
+    time.sleep(_ACCESS_INTERVAL)  # アクセス間隔を空けてレートリミットを回避
+    driver.get(url)
+    try:
+        WebDriverWait(driver, _WAIT_TIMEOUT).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, wait_css))
+        )
+    except Exception:
+        pass  # タイムアウトしても取得できるだけ取得する
     return BeautifulSoup(driver.page_source, "lxml")
 
 
@@ -55,7 +76,9 @@ def get_race_list_for_month(driver, year: str, month: str) -> list[dict]:
         "headcount",
     ]
 
-    soup = _get_soup(driver, f"{URL_CALENDAR}?year={year}&month={month}")
+    soup = _get_soup_wait(
+        driver, f"{URL_CALENDAR}?year={year}&month={month}", "td.RaceCellBox"
+    )
     race_cells = soup.find_all("td", class_="RaceCellBox")
 
     for cell in race_cells:
@@ -70,7 +93,11 @@ def get_race_list_for_month(driver, year: str, month: str) -> list[dict]:
         kaisai_date = a_tag["href"].split("kaisai_date=")[-1][:8]
         day = kaisai_date[6:8]
 
-        soup2 = _get_soup(driver, f"{URL_RACELIST_PAGE}?kaisai_date={kaisai_date}")
+        soup2 = _get_soup_wait(
+            driver,
+            f"{URL_RACELIST_PAGE}?kaisai_date={kaisai_date}",
+            "dd.RaceList_Data",
+        )
         datalist = soup2.find_all("dd", class_="RaceList_Data")
         placelist_raw = soup2.find_all("p", class_="RaceList_DataTitle")
 
@@ -148,6 +175,7 @@ def get_race_list_range(
     """
     driver = GetInfo._create_driver()
     GetInfo.login_process(driver)
+    time.sleep(_LOGIN_WAIT)  # ログイン完了後にブラウザが安定するまで待機
 
     all_results = []
     start_date = datetime(int(start_year), int(start_month), 1)
@@ -164,6 +192,11 @@ def get_race_list_range(
         print(f"{year}-{month} のレース一覧を取得中...")
 
         month_results = get_race_list_for_month(driver, year, month)
+        # 0件の場合は1回リトライ
+        if len(month_results) == 0:
+            print("  → 0件のためリトライ...")
+            time.sleep(3)
+            month_results = get_race_list_for_month(driver, year, month)
         all_results.extend(month_results)
         print(f"  → {len(month_results)} レース取得")
 
