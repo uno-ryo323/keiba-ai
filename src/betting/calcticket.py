@@ -26,7 +26,7 @@ class CalcTicket:
         )
         df_data = pd.merge(self.forecast_data, odds_data, on="horse_gate")
         df_data["EV"] = df_data["Win"] * df_data["odds_Win"]
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV'] >= 1]
         # if length >= len(df_data) + 2:
         #   return
@@ -63,7 +63,7 @@ class CalcTicket:
         # print(df_data)
         df_data["EV1"] = df_data["Place"] * df_data["odds_Show_Min"]
         df_data["EV2"] = df_data["Place"] * df_data["odds_Show_Max"]
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV1'] >= 1]
         # if length >= len(df_data) + 3:
         #   return
@@ -105,7 +105,7 @@ class CalcTicket:
         )
         df_data["prob"] = df_data["Place_x"] * df_data["Place_y"]
         df_data["EV"] = df_data["QuinellaPlace"] * df_data["prob"]
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV'] >= 1]
         # if length >= len(df_data) + 3:
         #  return
@@ -173,7 +173,7 @@ class CalcTicket:
             df_data.loc[index, "prob"] = prob
         df_data["EV"] = df_data["BracketQuinella"] * df_data["prob"]
         df_data = df_data.sort_values("prob", ascending=False)
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV'] >= 1]
         # if length >= len(df_data) + 3:
         #    return
@@ -217,7 +217,7 @@ class CalcTicket:
         )
         df_data["prob"] = df_data["Quinella_x"] * df_data["Quinella_y"]
         df_data["EV"] = df_data["Quinella_odds"] * df_data["prob"]
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV'] >= 1]
         # if length >= len(df_data) + 3:
         #   return
@@ -264,7 +264,7 @@ class CalcTicket:
             df_data["Win_x"] * df_data["Quinella_y"] * (1 - df_data["Win_y"])
         )
         df_data["EV"] = df_data["Exacta"] * df_data["prob"]
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV'] >= 1]
         # if length >= len(df_data) + 3:
         #   return
@@ -302,7 +302,6 @@ class CalcTicket:
             dtype={
                 "horse_gate1": int,
                 "horse_gate2": int,
-                "horse_gate3": int,
                 "Trio": object,
             },
         )
@@ -331,7 +330,7 @@ class CalcTicket:
         )
         df_data["prob"] = df_data["Place"] * df_data["Place_x"] * df_data["Place_y"]
         df_data["EV"] = df_data["prob"] * df_data["Trio"]
-        length = len(df_data)
+        len(df_data)
         # df_data = df_data[df_data['EV'] >= 1]
         # if length >= len(df_data) + 3:
         #   return
@@ -436,7 +435,7 @@ class CalcTicket:
         ]
         for ticket_type in ticket_types:
             index = ticket_data.index[ticket_data[1] == ticket_type]
-            count = len(index)
+            len(index)
             for i in index:
                 # ticket_data.loc[i,7] = round((float(count)*1.5/float(ticket_data.loc[i,6]))*100,-2)
                 ticket_data.loc[i, 7] = 100

@@ -782,7 +782,8 @@ class PreProcess:
         keiba_data = pd.read_csv(
             RESULT_PROCESS_DIR / "race_15-21_c2.csv",
             sep=",",
-            encoding="cp932",
+            encoding="utf-8",
+            low_memory=False,
             dtype={
                 "horse_id": object,
                 "race_id": object,
@@ -800,8 +801,17 @@ class PreProcess:
             },
         )
 
-        # agari_data = keiba_data.loc[:,['agari_rank_p1','agari_rank_p2','agari_rank_p3','agari_rank_p4','agari_rank_p5']]
-        # agari_data['agari_rank_ave'] = agari_data.mean(axis='columns')
+        agari_data = keiba_data.loc[
+            :,
+            [
+                "agari_rank_p1",
+                "agari_rank_p2",
+                "agari_rank_p3",
+                "agari_rank_p4",
+                "agari_rank_p5",
+            ],
+        ]
+        agari_data["agari_rank_ave"] = agari_data.mean(axis="columns")
 
         time_index_data = keiba_data.loc[
             :,
@@ -845,7 +855,7 @@ class PreProcess:
         keiba_data["rank_Quinella"] = rank_data_quinella
         keiba_data["rank_Place"] = rank_data_place
 
-        # keiba_data['agari_rank_ave'] = agari_data['agari_rank_ave']
+        keiba_data["agari_rank_ave"] = agari_data["agari_rank_ave"]
         keiba_data["time_index_ave"] = time_index_data["time_index_ave"]
         keiba_data["time_index_max"] = time_index_data["time_index_max"]
         keiba_data["time_index_min"] = time_index_data["time_index_min"]
@@ -853,7 +863,10 @@ class PreProcess:
         keiba_data["ave_horse_type"] = horse_type_data["ave_horse_type"]
 
         keiba_data.to_csv(
-            RESULT_PROCESS_DIR / "race_15-21_c2.csv", sep=",", encoding="cp932"
+            RESULT_PROCESS_DIR / "race_15-21_c2.csv",
+            sep=",",
+            encoding="utf-8",
+            index=False,
         )
 
     def encode_use_LabelEncoder(self):
@@ -922,42 +935,42 @@ class PreProcess:
             {"２": "2", "３": "3", "４": "4", "１": "1", "５": "5", "６": "6"},
             regex=True,
         )
-        if type(keiba_data["class_p1"][0]) != np.float64:
+        if not isinstance(keiba_data["class_p1"][0], np.float64):
             keiba_data["class_p1"] = keiba_data["class_p1"].replace(
                 {"２": "2", "３": "3", "４": "4", "１": "1", "５": "5", "６": "6"},
                 regex=True,
             )
-        if type(keiba_data["class_p2"][0]) != np.float64:
+        if not isinstance(keiba_data["class_p2"][0], np.float64):
             keiba_data["class_p2"] = keiba_data["class_p2"].replace(
                 {"２": "2", "３": "3", "４": "4", "１": "1", "５": "5", "６": "6"},
                 regex=True,
             )
-        if type(keiba_data["class_p3"][0]) != np.float64:
+        if not isinstance(keiba_data["class_p3"][0], np.float64):
             keiba_data["class_p3"] = keiba_data["class_p3"].replace(
                 {"２": "2", "３": "3", "４": "4", "１": "1", "５": "5", "６": "6"},
                 regex=True,
             )
-        if type(keiba_data["class_p4"][0]) != np.float64:
+        if not isinstance(keiba_data["class_p4"][0], np.float64):
             keiba_data["class_p4"] = keiba_data["class_p4"].replace(
                 {"２": "2", "３": "3", "４": "4", "１": "1", "５": "5", "６": "6"},
                 regex=True,
             )
-        if type(keiba_data["class_p5"][0]) != np.float64:
+        if not isinstance(keiba_data["class_p5"][0], np.float64):
             keiba_data["class_p5"] = keiba_data["class_p5"].replace(
                 {"２": "2", "３": "3", "４": "4", "１": "1", "５": "5", "６": "6"},
                 regex=True,
             )
 
         keiba_data["state"] = keiba_data["state"].replace({"稍": "稍重"})
-        if type(keiba_data["state_p1"][0]) != np.float64:
+        if not isinstance(keiba_data["state_p1"][0], np.float64):
             keiba_data["state_p1"] = keiba_data["state_p1"].replace({"稍": "稍重"})
-        if type(keiba_data["state_p2"][0]) != np.float64:
+        if not isinstance(keiba_data["state_p2"][0], np.float64):
             keiba_data["state_p2"] = keiba_data["state_p2"].replace({"稍": "稍重"})
-        if type(keiba_data["state_p3"][0]) != np.float64:
+        if not isinstance(keiba_data["state_p3"][0], np.float64):
             keiba_data["state_p3"] = keiba_data["state_p3"].replace({"稍": "稍重"})
-        if type(keiba_data["state_p4"][0]) != np.float64:
+        if not isinstance(keiba_data["state_p4"][0], np.float64):
             keiba_data["state_p4"] = keiba_data["state_p4"].replace({"稍": "稍重"})
-        if type(keiba_data["state_p5"][0]) != np.float64:
+        if not isinstance(keiba_data["state_p5"][0], np.float64):
             keiba_data["state_p5"] = keiba_data["state_p5"].replace({"稍": "稍重"})
 
         keiba_data["turn"] = keiba_data["turn"].replace({"右 外": "右外"}, regex=True)

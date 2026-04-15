@@ -1,7 +1,6 @@
 import sys
 import datetime
 import pandas as pd
-import requests
 from .scraping import getinfo
 from .scraping import racedb
 import os
@@ -13,9 +12,8 @@ from .config import BATCH_DIR, RACELIST_DIR
 
 
 class keibaAIBatch:
-    url = "https://notify-api.line.me/api/notify"
-    access_token = "Q84hPOp2PvVPPTfAmXrHMu4XJDWpZqyRX3mArxOdtRj"
-    headers = {"Authorization": "Bearer " + access_token}
+    # LINE Notify はサービス終了（2025-03-31）のため通知機能は無効化
+    _LINE_NOTIFY_DISABLED = True
 
     # Batch起動スケジュール決定
     def get_race_day(year, month):
@@ -126,15 +124,12 @@ class keibaAIBatch:
 
     # レース事前データ取得
     def get_predata(race_id):
-        A = 1
+        pass
 
     # レース予想
     @classmethod
     def forecast(cls, race_id):
-        message = "--レース予想--"
-        message = message + "\n"
-        payload = {"message": message}
-        r = requests.post(cls.url, headers=cls.headers, params=payload)
+        # LINE Notify サービス終了のため通知はスキップ
         dt_now = datetime.datetime.now()
         date = dt_now.strftime("%Y%m%d")
 
@@ -165,18 +160,14 @@ class keibaAIBatch:
     # 馬券購入
     @classmethod
     def purchase(cls):
-        message = "--購入通知--"
-        message = message + "\n"
-        payload = {"message": message}
-        r = requests.post(cls.url, headers=cls.headers, params=payload)
+        # LINE Notify サービス終了のため通知はスキップ
+        pass
 
     # 結果送信
     @classmethod
     def send_result(cls):
-        message = "--購入結果--"
-        message = message + "\n"
-        payload = {"message": message}
-        r = requests.post(cls.url, headers=cls.headers, params=payload)
+        # LINE Notify サービス終了のため通知はスキップ
+        pass
 
 
 if __name__ == "__main__":
