@@ -74,35 +74,44 @@ class raceDB:
             soup = BeautifulSoup(driver.page_source, "lxml")
 
             horse_blood = soup.find("table", {"class": "blood_table"})
-            horse_blood = horse_blood.find_all("a")
+            # blood_table が存在しない馬ページ（未登録・削除済みなど）は空データで埋める
+            # bloods は1頭あたり6要素（呼び出し側で count2+=6）なので必ず6個追加する
+            if horse_blood is None:
+                bloods.extend([""] * 6)
+            else:
+                blood_tags = horse_blood.find_all("a")
+                for blood in blood_tags:
+                    # <a> タグと <span> タグ（2024年頃追加）を除去して血統名のみ抽出
+                    bloods.append(blood.get_text(strip=True))
+
             horse_prof = soup.find("table", {"class": "db_prof_table no_OwnerUnit"})
 
             if horse_prof is None:
                 horse_prof = soup.find("table", {"class": "db_prof_table"})
-            horse_prof = horse_prof.find_all("tr")
-
-            for i in range(1, 5):
-                if (
-                    "調教師" in str(horse_prof[i])
-                    or "馬主" in str(horse_prof[i])
-                    or "生産者" in str(horse_prof[i])
-                ):
-                    horse_prof[i] = str(horse_prof[i]).replace("\n", "")
-                    horse_prof[i] = str(horse_prof[i]).replace("<tr>", "")
-                    horse_prof[i] = str(horse_prof[i]).replace("</tr>", "")
-                    # print(horse_prof[i])
-                    horse_prof[i] = re.sub(r"<th>.*</th>", "", str(horse_prof[i]))
-                    horse_prof[i] = re.sub(r".*\">", "", str(horse_prof[i]))
-                    horse_prof[i] = re.sub(r"</a>", "", str(horse_prof[i]))
-                    horse_prof[i] = re.sub(r"</td>", "", str(horse_prof[i]))
-                    horse_prof[i] = re.sub(r"<td>", "", str(horse_prof[i]))
-                    horse_prof[i] = re.sub(r"\(.*", "", str(horse_prof[i]))
-                    #  print(horse_prof[i])
-                    horse_info.append(horse_prof[i])
-            for blood in horse_blood:
-                # <a> タグと <span> タグ（2024年頃追加）を除去して血統名のみ抽出
-                blood = blood.get_text(strip=True)
-                bloods.append(blood)
+            # db_prof_table が存在しない馬ページはスキップし、空データで埋める
+            # horse_info は1頭あたり3要素（調教師・馬主・生産者）
+            if horse_prof is None:
+                horse_info.extend(["", "", ""])
+            else:
+                horse_prof = horse_prof.find_all("tr")
+                for i in range(1, 5):
+                    if (
+                        "調教師" in str(horse_prof[i])
+                        or "馬主" in str(horse_prof[i])
+                        or "生産者" in str(horse_prof[i])
+                    ):
+                        horse_prof[i] = str(horse_prof[i]).replace("\n", "")
+                        horse_prof[i] = str(horse_prof[i]).replace("<tr>", "")
+                        horse_prof[i] = str(horse_prof[i]).replace("</tr>", "")
+                        # print(horse_prof[i])
+                        horse_prof[i] = re.sub(r"<th>.*</th>", "", str(horse_prof[i]))
+                        horse_prof[i] = re.sub(r".*\">", "", str(horse_prof[i]))
+                        horse_prof[i] = re.sub(r"</a>", "", str(horse_prof[i]))
+                        horse_prof[i] = re.sub(r"</td>", "", str(horse_prof[i]))
+                        horse_prof[i] = re.sub(r"<td>", "", str(horse_prof[i]))
+                        horse_prof[i] = re.sub(r"\(.*", "", str(horse_prof[i]))
+                        #  print(horse_prof[i])
+                        horse_info.append(horse_prof[i])
 
             # 前5走の取得
 
@@ -114,6 +123,7 @@ class raceDB:
             pre_race3 = 0
             pre_race4 = 0
             pre_race5 = 0
+            careear = 0  # pre_race_results が None の場合でも参照できるよう初期化
             if pre_race_results is not None:
                 pre_race_results = pre_race_results.find_all("td")
                 pre_race_tags = [
