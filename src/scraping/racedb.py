@@ -369,6 +369,26 @@ class raceDB:
     # JRAのレース結果をnetkeibaから取得する
     # race_ids:取得するレース一覧
     def get_race_result(race_ids):
+        _HEADER = (
+            "race_id,year,month,day,race_name,place,kai,day2,race_num,class,"
+            "mare_only,hande,course,turn,distance,weather,state,headcount,"
+            "rank,lane_gate,horse_gate,horse_name,sex,old,handiy,"
+            "weight,zougen,time,popular_rank,odds,agari,"
+            "corner_position1,corner_position2,corner_position3,corner_position4,"
+            "time_index,kanri,remarks,horse_type,"
+            "jockey,trainer,banusi,breeder,"
+            "father,father_father,father_mother,mother,mother_father,mother_mother,"
+            "horse_id,pre_race1,pre_race2,pre_race3,pre_race4,pre_race5,career"
+        )
+
+        # ファイルが存在しない・空の場合はヘッダ行を書き込む
+        import os
+
+        if not os.path.exists(raceDB.PATH) or os.path.getsize(raceDB.PATH) == 0:
+            with open(raceDB.PATH, "w", encoding="cp932") as f:
+                f.write(_HEADER + "\n")
+            print(f"ヘッダ行を書き込みました: {raceDB.PATH}")
+
         # 取得済み race_id をセットとして読み込み（重複スキップ用）
         existing_ids = set()
         try:
@@ -385,7 +405,7 @@ class raceDB:
             )
             print(f"取得済み race_id: {len(existing_ids)} 件")
         except Exception:
-            pass  # ファイルが存在しない・ヘッダなし等は無視
+            pass  # ヘッダのみ等は無視
 
         # 馬ページ取得用 Selenium ドライバー（JS レンダリングが必要なため）
         from .getinfo import GetInfo
