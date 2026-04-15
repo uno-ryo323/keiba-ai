@@ -64,7 +64,7 @@ class raceDB:
             horse_number = re.sub(r"<a href=", "", str(horse_number))
             horse_number = re.sub(r" id.*", "", horse_number)
             horse_number = horse_number.replace('"', "")
-            time.sleep(1)
+            time.sleep(1.5)
             driver.get(URL_DB + horse_number)
 
             horse_number = horse_number.replace("/", "")
@@ -162,7 +162,7 @@ class raceDB:
             jockey_number = re.sub(r"<a href=", "", str(jockey_number))
             jockey_number = re.sub(r" id.*", "", jockey_number)
             jockey_number = jockey_number.replace('"', "")
-            time.sleep(0.5)
+            time.sleep(1)
             # print(jockey_number)
             res = raceDB.session.get(URL_DB + jockey_number)
             soup = BeautifulSoup(res.content, "lxml")
@@ -421,7 +421,7 @@ class raceDB:
 
                 url = f"{URL_DB}/race/{race_id}/"
 
-                time.sleep(0.5)
+                time.sleep(1)
                 res = raceDB.session.get(url)
                 res.encoding = res.apparent_encoding
 

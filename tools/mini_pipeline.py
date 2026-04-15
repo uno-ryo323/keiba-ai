@@ -30,6 +30,9 @@ MINI_JRA21 = ROOT / "data/netkeiba/result/race_jra2.1_mini.csv"
 MINI_JRA22 = ROOT / "data/netkeiba/result/race_jra2.2_mini.csv"
 MINI_MODEL_DIR = ROOT / "src/model/mini"
 
+# 本番データ収集用の設定（2023-2025）
+FULL_RACE_IDS_CSV = ROOT / "data/netkeiba/assets/race_id_list_202301_202512.csv"
+
 # 予測・買い目確認用の既存レース（Phase 3 で動作確認済み）
 PRED_DATE = "20210105"
 PRED_RACE_ID = "202106010101"
@@ -38,30 +41,45 @@ PRED_RACE_ID = "202106010101"
 # ---------------------------------------------------------------------------
 # Step 1: レース結果収集
 # ---------------------------------------------------------------------------
-def step1_collect():
+def step1_collect(year_from=None, month_from=None, year_to=None, month_to=None):
+    """
+    race_id_list_202301_202512.csv から指定年月範囲のレース結果を収集する。
+
+    引数省略時は CSV 全件を対象とする。
+    半年ごとのバッチ実行例:
+        python tools/mini_pipeline.py 1 2023 1 2023 6
+        python tools/mini_pipeline.py 1 2023 7 2023 12
+    取得済み race_id は raceDB.get_race_result() 内でスキップされる。
+    出力先: data/netkeiba/result/race_all.csv（BackUp版と同ディレクトリ外）
+    """
     print("\n=== Step 1: レース結果収集 ===")
     import pandas as pd
     from src.scraping.racedb import raceDB
+    from src.config import RACE_ALL_CSV
 
-    # 2022-02-05 の race_id を抽出
-    df = pd.read_csv(MINI_RACE_IDS_CSV, encoding="shift_jis", dtype=str)
-    ids = df[(df["year"] == "2022") & (df["month"] == "02") & (df["day"] == "05")][
-        "race_id"
-    ].tolist()
-    print(f"対象: {len(ids)} レース ({MINI_DATE})")
+    df = pd.read_csv(FULL_RACE_IDS_CSV, encoding="shift_jis", dtype=str)
 
-    # 出力先をミニ版に差し替え
-    original_path = raceDB.PATH
-    raceDB.PATH = str(MINI_RACE_ALL)
-    try:
-        raceDB.get_race_result(ids)
-    finally:
-        raceDB.PATH = original_path
+    # 年月範囲フィルタ
+    if year_from and month_from and year_to and month_to:
+        yf, mf = str(year_from), str(month_from).zfill(2)
+        yt, mt = str(year_to), str(month_to).zfill(2)
+        mask = (df["year"] + df["month"].str.zfill(2) >= yf + mf) & (
+            df["year"] + df["month"].str.zfill(2) <= yt + mt
+        )
+        df = df[mask]
+        print(f"対象期間: {yf}-{mf} 〜 {yt}-{mt}")
+    else:
+        print("対象期間: 全件（2023-01〜2025-12）")
 
-    # 結果確認
-    if MINI_RACE_ALL.exists():
-        lines = MINI_RACE_ALL.read_text(encoding="cp932", errors="ignore").splitlines()
-        print(f"出力: {MINI_RACE_ALL} ({len(lines)} 行)")
+    ids = df["race_id"].tolist()
+    print(f"対象: {len(ids)} レース")
+    print(f"出力先: {RACE_ALL_CSV}")
+
+    raceDB.get_race_result(ids)
+
+    if RACE_ALL_CSV.exists():
+        lines = RACE_ALL_CSV.read_text(encoding="cp932", errors="ignore").splitlines()
+        print(f"出力行数（累計）: {len(lines)} 行")
     else:
         print("ERROR: 出力ファイルが生成されませんでした")
 
@@ -202,8 +220,19 @@ if __name__ == "__main__":
         step2_patch_agari_rank()
         step4_train()
         step5_predict()
+    elif arg == "1":
+        # step1 のみ: 引数で年月範囲を指定可能
+        # 例: python tools/mini_pipeline.py 1 2023 1 2023 6
+        if len(sys.argv) == 6:
+            _, _, yf, mf, yt, mt = sys.argv
+            step1_collect(yf, mf, yt, mt)
+        else:
+            step1_collect()
     elif arg in STEPS:
         label, func = STEPS[arg]
         func()
     else:
         print(f"使い方: python tools/mini_pipeline.py [{'|'.join(STEPS)}|all]")
+        print("  step1 の半年バッチ例:")
+        print("    python tools/mini_pipeline.py 1 2023 1 2023 6")
+        print("    python tools/mini_pipeline.py 1 2023 7 2023 12")
