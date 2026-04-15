@@ -100,9 +100,8 @@ class raceDB:
                     #  print(horse_prof[i])
                     horse_info.append(horse_prof[i])
             for blood in horse_blood:
-                blood = re.sub(r"<a.*\">", "", str(blood))
-                blood = re.sub(r"</a>", "", str(blood))
-                #  print(blood)
+                # <a> タグと <span> タグ（2024年頃追加）を除去して血統名のみ抽出
+                blood = blood.get_text(strip=True)
                 bloods.append(blood)
 
             # 前5走の取得
@@ -158,23 +157,21 @@ class raceDB:
     def get_jockey_info(jockey_link):
         jockeys = []
         # print("------------jockey-----------")
-        for jockey_number in jockey_link:
-            jockey_number = re.sub(r"<a href=", "", str(jockey_number))
-            jockey_number = re.sub(r" id.*", "", jockey_number)
-            jockey_number = jockey_number.replace('"', "")
-            time.sleep(1)
-            # print(jockey_number)
-            res = raceDB.session.get(URL_DB + jockey_number)
-            soup = BeautifulSoup(res.content, "lxml")
-            title = soup.find("title")
-            title = re.sub(r"騎手データ - netkeiba.com</title>", "", str(title))
-            title = re.sub(r" | ", "", title)
-            title = re.sub(r"<title>", "", str(title))
-            title = title.replace("|", "")
-            jockeys.append(title)
+        for jockey_tag in jockey_link:
+            # 騎手名はレース結果テーブルの <a> タグテキストに直接含まれる。
+            # 旧実装は別ページを HTTP 取得してタイトルから抽出していたが、
+            # netKeiba の HTML 変更（title 属性追加・ページタイトル形式変更）で
+            # URL 構築と文字列処理が壊れるため、タグテキストを直接取得する方式に変更。
+            name = jockey_tag.get_text(strip=True)
+            jockeys.append(name)
         return jockeys
 
     def horse_list_split(HorseList):
+        # ヘッダ行（<th> のみ）を除外し、データ行（<td> を含む行）だけを結合して処理する。
+        # <th> は </td> 変換されないため、そのままテキスト処理すると
+        # ヘッダ文字列と1着馬の rank が結合されてインデックスがずれる不具合を防ぐ。
+        data_rows = [row for row in HorseList.find_all("tr") if row.find("td")]
+        HorseList = "".join(str(row) for row in data_rows)
         HorseList = re.sub(r"\n", "", str(HorseList))
         HorseList = re.sub(r" ", "", str(HorseList))
         HorseList = re.sub(r"</td>", "_", str(HorseList))
@@ -182,18 +179,16 @@ class raceDB:
         HorseList = re.sub(r"\[", "", str(HorseList))
         HorseList = re.sub(r"\]", "", str(HorseList))
         HorseList = str(HorseList).replace("\xa0", "")
-        # netKeiba は 2024年頃に列を追加（後半指数M・通過指数・追切指数・オッズ指数）
-        # 有料会員向け機能のため常に空。旧ヘッダー文字列も合わせて更新。
-        HorseList = HorseList.replace(
-            "着順枠番馬番馬名性齢斤量騎手タイム着差ﾀｲﾑ指数後半指数M通過指数追切指数オッズ指数通過上り単勝人気馬体重調教ﾀｲﾑ厩舎ｺﾒﾝﾄ備考調教師馬主賞金(万円)",
-            "",
-        )
         tmp = str(HorseList).split("_")
         # print(tmp)
         i = 0
         count = 0
         Race_lists = []
         while i + 3 < len(tmp):
+            # 数値でない rank（除外・中止馬など）はスキップ
+            if not str(tmp[i]).strip().isdigit():
+                i += 1
+                continue
             rank_race = tmp[i]
             number_frame = tmp[i + 1]
             number_horse = tmp[i + 2]
